@@ -53,13 +53,13 @@ class Site extends Instance {
 			exit('Invalid record');
 		}
 
-		$data = base64_encode( implode(',', array(
+		$data = implode(',', array(
 			$row->user_id,
 			Conf::val('_pk'),
 			$this->_pack_b64sign(time()),
-		)) );
-		$url = $row->url.'?'.self::QS_NAME_EASY_LOGIN.'='.$data;
-		defined('debug') && debug('Easy login to child site w/ token: ' . $row->url);
+		));
+		$url = $row->url.'?'.self::QS_NAME_EASY_LOGIN.'='.base64_encode($data);
+		defined('debug') && debug('Easy login to child site w/ token: ' . $url);
 		wp_redirect($url);
 		exit();
 	}
@@ -75,6 +75,7 @@ class Site extends Instance {
 
 		$info = explode( ',', base64_decode( $_GET[ self::QS_NAME_EASY_LOGIN ] ) );
 		if ( empty( $info[ 0 ] ) || empty( $info[ 1 ] )  || empty( $info[ 2 ] ) ) {
+			defined('debug') && debug('dologin easy login token failed to decode');
 			return $this->_failed_login( $username );
 		}
 
@@ -99,13 +100,24 @@ class Site extends Instance {
 		if ( $row->active != 1 || $row->is_child != 1 ) {
 			exit( 'dologin_invalid_root_record' );
 		}
+		// Check if last used timestamp is the current one to prevent replay attacks
+		if ( $row->last_used_at && (string)$row->last_used_at === $ts ) {
+			defined('debug') && debug('dologin easy login already used' . $ts);
+			exit( 'dologin_link_used' );
+		}
 
 		$user_info = get_userdata( $uid );
 		defined('debug') && debug('dologin easy login passed, uid: ' . $uid . ', username: ' . $user_info->user_login);
 
+		// Show login confirm page
+		if ( empty( $_POST[ 'confirmed' ] ) ) {
+			require_once DOLOGIN_DIR . 'tpl/easylogin_cfm.tpl.php';
+			exit;
+		}
+
 		// can login, update record first
 		$q = "UPDATE `$this->_tb` SET last_used_at=%d, count=count+1 WHERE id=%d";
-		$wpdb->query( $wpdb->prepare( $q, array( time(), $row->id ) ) );
+		$wpdb->query( $wpdb->prepare( $q, array( $ts, $row->id ) ) );
 
 		// Login
 		wp_set_auth_cookie( $user_info->ID, false );

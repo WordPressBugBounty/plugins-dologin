@@ -7,17 +7,15 @@ defined( 'WPINC' ) || exit;
 
 <div class="d-flex justify-content-center mt-5">
 <div class="alert alert-primary alert-dismissible shadow">
-	<h4 class="alert-heading"><?php echo __( 'DoLogin Notice', 'dologin' ); ?></h4>
+	<h4 class="alert-heading"><?php echo __( 'DoLogin Easy Login Notice', 'dologin' ); ?></h4>
 
 	<p class="mt-3"><?php echo __( 'You will login as the following user', 'dologin' ); ?>: </p>
 
-	<p class="h5 mb-3 ml-3 text-success"><?php echo $username; ?></p>
+	<p class="h5 mb-3 ml-3 text-success"><?php echo $user_info->user_login; ?></p>
 
-<?php if ( $row->onetime ) : ?>
-<div class="alert alert-warning" role="alert">
-	<?php echo __( 'Note: this is a one time usage link.', 'dologin' ); ?>
-</div>
-<?php endif; ?>
+	<p class="mt-3"><?php echo __( 'to the site:', 'dologin' ); ?>: </p>
+
+	<p class="h5 mb-3 ml-3 text-success"><?php echo site_url(); ?></p>
 
 <form action="<?php echo $_SERVER['REQUEST_URI']; ?>" method="post" class="mt-5">
 	<input type="hidden" name="confirmed" value="1">

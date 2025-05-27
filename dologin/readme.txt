@@ -3,7 +3,7 @@ Contributors: WPDO
 Tags: Login security, 2FA login, Easy login, GeoLocation login limit, limit login attempts, passwordless login
 Requires at least: 4.0
 Tested up to: 6.8
-Stable tag: 4.0
+Stable tag: 4.1.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -75,7 +75,16 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 
 == Changelog ==
 
-= 4.0 =
+= 4.1.1 - May 27 2025 =
+* Resolved WooCommerce HPOS feature warning.
+
+= 4.1 - May 27 2025 =
+* Showed the easy login confirmation landing page.
+* Disallowed reuse of login link to prevent possible replay attack.
+* Fixed root site pk/sk clear issue in easy login when saving conf.
+* Restored reCAPTCHA to previous version.
+
+= 4.0 - May 26 2025 =
 * 🍀 `Easy Login` feature! Allow one root WordPress to easy login to multi child WordPress sites.
 
 = 3.8 =

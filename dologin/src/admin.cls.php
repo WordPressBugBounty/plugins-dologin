@@ -151,7 +151,7 @@ class Admin extends Instance {
 			$list = array() ;
 
 			foreach ( $this->cls( 'Conf' )->get_options() as $id => $v ) {
-				if ( $id == '_ver' ) {
+				if ( substr( $id, 0, 1 ) === '_' ) {
 					continue;
 				}
 
