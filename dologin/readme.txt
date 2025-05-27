@@ -1,13 +1,13 @@
 === DoLogin Security ===
 Contributors: WPDO
-Tags: Login security, 2FA login, GeoLocation login limit, limit login attempts, passwordless login
+Tags: Login security, 2FA login, Easy login, GeoLocation login limit, limit login attempts, passwordless login
 Requires at least: 4.0
-Tested up to: 6.3.1
-Stable tag: 3.8
+Tested up to: 6.8
+Stable tag: 4.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-2FA login. Passwordless login. SMS passcode as 2nd step verification. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce.
+Easy Login. 2FA login. Passwordless login. SMS passcode as 2nd step verification. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce.
 
 == Description ==
 
@@ -63,16 +63,20 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 
 == Screenshots ==
 
-1. Plugin Settings
-2. Plugin Passwordless Login
-3. Plugin Login Attempts Log
-4. Login Page (After sent dynamic code to mobile text message)
-5. Login Page (2 times left)
-6. Login Page (Too many failure)
-7. Login Page (Blacklist blocked)
-8. WooCommerce login protection
+1. Plugin Site Connections
+2. Plugin Settings
+3. Plugin Passwordless Login
+4. Plugin Login Attempts Log
+5. Login Page (After sent dynamic code to mobile text message)
+6. Login Page (2 times left)
+7. Login Page (Too many failure)
+8. Login Page (Blacklist blocked)
+9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.0 =
+* 🍀 `Easy Login` feature! Allow one root WordPress to easy login to multi child WordPress sites.
 
 = 3.8 =
 * Security patch per patchstack report.

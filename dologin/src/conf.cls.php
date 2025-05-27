@@ -12,6 +12,8 @@ class Conf extends Instance {
 
 	public static $_default_options = array(
 		'_ver'				=> '',
+		'_pk'				=> '',
+		'_sk'				=> '',
 		'max_retries'		=> 6,
 		'duration'			=> 10,
 		'auto_upgrade'		=> true,

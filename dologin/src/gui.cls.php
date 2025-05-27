@@ -78,12 +78,13 @@ class GUI extends Instance {
 	 *
 	 * @since 2.0
 	 */
-	public function enqueue_admin() {
+	public function enqueue_admin($hook) {
 		// Only enqueue on dologin pages
 		if( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'dologin' ) !== 0 ) {
-			return;
+			if ( $hook !== 'users.php' ) {
+				return;
+			}
 		}
-
 		$this->enqueue_style();
 
 		wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );

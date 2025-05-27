@@ -37,7 +37,7 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 			dataType: 'json',
 			success: function( res ) {
 				if ( res._res !== 'ok' ) {
-					$( '#dologin-process-msg' ).attr( 'class', 'dologin-err' ).html( res._msg );
+					$( '#dologin-process-msg' ).attr( 'class', 'dologin-danger' ).html( res._msg );
 					$( '#dologin-two_factor_code' ).attr( 'required', false );
 					$( '#dologin-dynamic_code' ).hide();
 				} else {
