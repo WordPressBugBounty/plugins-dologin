@@ -106,7 +106,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function login_form() {
-		if ( Conf::val( 'sms' ) ) {
+		if ( Conf::val( 'sms' ) || Conf::val( '2fa' ) ) {
 			echo '	<p id="dologin-process">
 						Dologin Security:
 						<span id="dologin-process-msg"></span>
@@ -118,7 +118,7 @@ class GUI extends Instance {
 				';
 		}
 
-		if ( Conf::val( 'gg' ) ) {
+		if ( Conf::val( 'cf' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -138,7 +138,7 @@ class GUI extends Instance {
 			';
 		}
 
-		if ( Conf::val( 'gg' ) && Conf::val( 'recapt_register' ) ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -150,7 +150,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function lostpassword_form() {
-		if ( Conf::val( 'gg' ) && Conf::val( 'recapt_forget' ) ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_forget' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}

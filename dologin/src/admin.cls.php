@@ -79,7 +79,7 @@ class Admin extends Instance {
 	 */
 	public function user_contactmethods( $contactmethods ) {
 		if ( ! array_key_exists( 'phone_number', $contactmethods ) ) {
-			$contactmethods[ 'phone_number' ] = __( 'Dologin Operations', 'dologin' );
+			$contactmethods[ 'phone_number' ] = __( 'Dologin Mobile Number', 'dologin' );
 		}
 		if ( ! array_key_exists( '2fa', $contactmethods ) ) {
 			$contactmethods[ '2fa' ] = __( 'Dologin 2FA Secret', 'dologin' );

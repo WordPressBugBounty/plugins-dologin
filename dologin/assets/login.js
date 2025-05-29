@@ -57,8 +57,8 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		} );
 	}
 
-	$('#loginform').submit( dologin_cb );
-	$('.woocommerce-form-login').submit( dologin_cb );
+	$('#loginform').on("submit", dologin_cb );
+	$('.woocommerce-form-login').on("submit", dologin_cb );
 	// $('.tml-login form[name="loginform"], .tml-login form[name="login"], #wpmem_login form, form#ihc_login_form').submit( dologin_cb );
 
 } ); } );
