@@ -2,8 +2,8 @@
 Contributors: WPDO
 Tags: Login security, 2FA login, Easy login, Cloudflare Turnstile reCAPTCHA, GeoLocation login limit, limit login attempts, passwordless login
 Requires at least: 4.0
-Tested up to: 6.8
-Stable tag: 4.2
+Tested up to: 6.8.1
+Stable tag: 4.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -74,6 +74,9 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.3 - Jun 11 2025 =
+* Generating passwordless link will redirect to the corresponding tab now.
 
 = 4.2 - May 31 2025 =
 * 🍀 Cloudflare Turnstile reCAPTCHA.
