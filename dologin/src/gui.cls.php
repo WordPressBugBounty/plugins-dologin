@@ -5,13 +5,14 @@
  * @since 1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class GUI extends Instance {
-	const DB_MSG = 'dologin.msg';
-	const NOTICE_BLUE = 'notice notice-info';
-	const NOTICE_GREEN = 'notice notice-success';
-	const NOTICE_RED = 'notice notice-error';
+	const DB_MSG        = 'dologin.msg';
+	const NOTICE_BLUE   = 'notice notice-info';
+	const NOTICE_GREEN  = 'notice notice-success';
+	const NOTICE_RED    = 'notice notice-error';
 	const NOTICE_YELLOW = 'notice notice-warning';
 
 	/**
@@ -44,10 +45,6 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function login_enqueue_scripts() {
-		if ( ! Util::is_login_page() ) {
-			// return;
-		}
-
 		$this->enqueue_style();
 
 		// JS is only for sms/2fa code
@@ -57,8 +54,8 @@ class GUI extends Instance {
 
 		wp_register_script( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.js', array( 'jquery' ), Core::VER, false );
 
-		$localize_data = array();
-		$localize_data[ 'login_url' ] = get_rest_url( null, 'dologin/v1/' . ( Conf::val('2fa') ? '2fa' : 'sms' ) );
+		$localize_data              = array();
+		$localize_data['login_url'] = get_rest_url( null, 'dologin/v1/' . ( Conf::val( '2fa' ) ? '2fa' : 'sms' ) );
 		wp_localize_script( 'dologin', 'dologin', $localize_data );
 
 		wp_enqueue_script( 'dologin' );
@@ -70,7 +67,7 @@ class GUI extends Instance {
 	 * @since 1.3
 	 */
 	public function enqueue_style() {
-		wp_enqueue_style( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.css', array(), Core::VER, 'all');
+		wp_enqueue_style( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.css', array(), Core::VER, 'all' );
 	}
 
 	/**
@@ -78,9 +75,9 @@ class GUI extends Instance {
 	 *
 	 * @since 2.0
 	 */
-	public function enqueue_admin($hook) {
+	public function enqueue_admin( $hook ) {
 		// Only enqueue on dologin pages
-		if( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'dologin' ) !== 0 ) {
+		if ( empty( $_GET['page'] ) || strpos( sanitize_text_field( wp_unslash( $_GET['page'] ) ), 'dologin' ) !== 0 ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading current admin page slug only, no state change.
 			if ( $hook !== 'users.php' ) {
 				return;
 			}
@@ -89,14 +86,13 @@ class GUI extends Instance {
 
 		wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
 
-		$localize_data = array();
-		$localize_data[ 'url_test_sms' ] = get_rest_url( null, 'dologin/v1/test_sms' );
-		$localize_data[ 'url_myip' ] = get_rest_url( null, 'dologin/v1/myip' );
-		$localize_data[ 'current_user_phone' ] = $this->cls( 'SMS' )->current_user_phone();
+		$localize_data                       = array();
+		$localize_data['url_test_sms']       = get_rest_url( null, 'dologin/v1/test_sms' );
+		$localize_data['url_myip']           = get_rest_url( null, 'dologin/v1/myip' );
+		$localize_data['current_user_phone'] = $this->cls( 'SMS' )->current_user_phone();
 		wp_localize_script( 'dologin_admin', 'dologin_admin', $localize_data );
 
 		wp_enqueue_script( 'dologin_admin' );
-
 	}
 
 	/**
@@ -112,7 +108,7 @@ class GUI extends Instance {
 						<span id="dologin-process-msg"></span>
 					</p>
 					<p id="dologin-dynamic_code">
-						<label for="dologin-two_factor_code">' . __( 'Dynamic Code', 'dologin' ) . '</label>
+						<label for="dologin-two_factor_code">' . esc_html__( 'Dynamic Code', 'dologin' ) . '</label>
 						<br /><input type="text" name="dologin-two_factor_code" id="dologin-two_factor_code" autocomplete="off" />
 					</p>
 				';
@@ -132,7 +128,7 @@ class GUI extends Instance {
 	public function register_form() {
 		if ( Conf::val( 'sms_force' ) ) {
 			echo '	<p>
-						<label for="phone_number">' . __( 'Dologin Security Phone', 'dologin' ) . '</label>
+						<label for="phone_number">' . esc_html__( 'Dologin Security Phone', 'dologin' ) . '</label>
 						<input type="text" name="phone_number" id="phone_number" class="input" size="25" required />
 					</p>
 			';
@@ -178,7 +174,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function enroll( $id ) {
-		echo '<input type="hidden" name="_settings-enroll[]" value="' . $id . '" />';
+		echo '<input type="hidden" name="_settings-enroll[]" value="' . esc_attr( $id ) . '" />';
 	}
 
 	/**
@@ -202,7 +198,7 @@ class GUI extends Instance {
 
 		$this->enroll( $id );
 
-		echo "<textarea name='$id' rows='9' cols='$cols'>" . esc_textarea( $val ) . "</textarea>";
+		echo "<textarea name='" . esc_attr( $id ) . "' rows='9' cols='" . esc_attr( $cols ) . "'>" . esc_textarea( $val ) . '</textarea>';
 	}
 
 	/**
@@ -224,7 +220,7 @@ class GUI extends Instance {
 
 		$this->enroll( $id );
 
-		echo "<input type='$type' class='$cls' name='$id' value='" . esc_textarea( $val ) ."' id='input_$label_id' /> ";
+		echo "<input type='" . esc_attr( $type ) . "' class='" . esc_attr( $cls ) . "' name='" . esc_attr( $id ) . "' value='" . esc_textarea( $val ) . "' id='input_" . esc_attr( $label_id ) . "' /> ";
 	}
 
 	/**
@@ -263,12 +259,11 @@ class GUI extends Instance {
 
 		if ( ! is_string( Conf::$_default_options[ $id ] ) ) {
 			$checked = (int) Conf::val( $id, true ) === (int) $val ? ' checked ' : '';
-		}
-		else {
+		} else {
 			$checked = Conf::val( $id, true ) === $val ? ' checked ' : '';
 		}
 
-		echo "<input type='radio' autocomplete='off' name='$id' id='$id_attr' value='$val' $checked /> <label for='$id_attr'>$txt</label>";
+		echo "<input type='radio' autocomplete='off' name='" . esc_attr( $id ) . "' id='" . esc_attr( $id_attr ) . "' value='" . esc_attr( $val ) . "' " . esc_attr( $checked ) . " /> <label for='" . esc_attr( $id_attr ) . "'>" . esc_html( $txt ) . '</label>';
 	}
 
 	/**
@@ -277,7 +272,7 @@ class GUI extends Instance {
 	 * @access private
 	 */
 	private static function _build_msg( $color, $str ) {
-		return '<div class="' . $color . ' is-dismissible"><p>'. $str . '</p></div>';
+		return '<div class="' . $color . ' is-dismissible"><p>' . $str . '</p></div>';
 	}
 
 	/**
@@ -326,11 +321,10 @@ class GUI extends Instance {
 		if ( defined( 'DOING_CRON' ) ) {
 			// WP CLI will show the info directly
 			if ( defined( 'WP_CLI' ) && WP_CLI ) {
-				$msg = strip_tags( $msg );
+				$msg = wp_strip_all_tags( $msg );
 				if ( $color == self::NOTICE_RED ) {
 					\WP_CLI::error( $msg );
-				}
-				else {
+				} else {
 					\WP_CLI::success( $msg );
 				}
 			}
@@ -338,6 +332,7 @@ class GUI extends Instance {
 		}
 
 		if ( $echo ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted plugin-generated admin notice markup.
 			echo self::_build_msg( $color, $msg );
 			return;
 		}
@@ -348,8 +343,7 @@ class GUI extends Instance {
 			foreach ( $msg as $str ) {
 				$messages[] = self::_build_msg( $color, $str );
 			}
-		}
-		else {
+		} else {
 			$messages[] = self::_build_msg( $color, $msg );
 		}
 		update_option( self::DB_MSG, $messages );
@@ -361,26 +355,25 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function display_msg() {
-		$this->cls('SMS')->gui_notice();
-		$this->cls('TwoFA')->gui_notice();
+		$this->cls( 'SMS' )->gui_notice();
+		$this->cls( 'TwoFA' )->gui_notice();
 
 		// One time msg
 		$messages = get_option( self::DB_MSG );
-		if( is_array( $messages ) ) {
+		if ( is_array( $messages ) ) {
 			$messages = array_unique( $messages );
 
 			$added_thickbox = false;
-			foreach ($messages as $msg) {
+			foreach ( $messages as $msg ) {
 				// Added for popup links
 				if ( strpos( $msg, 'TB_iframe' ) && ! $added_thickbox ) {
 					add_thickbox();
 					$added_thickbox = true;
 				}
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trusted plugin-generated admin notice markup (may contain the 2FA setup form).
 				echo $msg;
 			}
 		}
 		delete_option( self::DB_MSG );
-
 	}
-
 }

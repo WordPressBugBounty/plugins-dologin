@@ -3,14 +3,14 @@
 /**
  * Plugin Name:       DoLogin Security
  * Description:       Passwordless login. 2FA verification login. GeoLocation (Continent/Country/City) or IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce. Login attempt limit. CLI supported for generating passwordless login.
- * Version:           4.3
+ * Version:           4.4
  * Author:            WPDO
  * License:           GPLv3
  * License URI:       http://www.gnu.org/licenses/gpl.html
  * Text Domain:       dologin
  * Domain Path:       /lang
  *
- * Copyright (C) 2025 WPDO
+ * Copyright (C) 2025-2026 WPDO
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ if (defined('DOLOGIN_V')) {
 	return;
 }
 
-define('DOLOGIN_V', '4.3');
+define('DOLOGIN_V', '4.4');
 
 !defined('DOLOGIN_DIR') && define('DOLOGIN_DIR', __DIR__ . '/'); // Full absolute path '/usr/local/***/wp-content/plugins/dologin/' or MU
 !defined('DOLOGIN_PLUGIN_URL') && define('DOLOGIN_PLUGIN_URL', plugin_dir_url(__FILE__)); // Full URL path '//example.com/wp-content/plugins/dologin/'
@@ -70,5 +70,12 @@ if (!function_exists('dologin_gen_link')) {
 		return \dologin\Pswdless::cls()->gen_link($src, $uid, true);
 	}
 }
+
+// Declare WooCommerce HPOS (High-Performance Order Storage) compatibility. This plugin only hooks the login form and never touches order data, so it is fully compatible.
+add_action('before_woocommerce_init', function () {
+	if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+	}
+});
 
 \dologin\Core::cls();

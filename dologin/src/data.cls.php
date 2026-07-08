@@ -5,6 +5,7 @@
  * @since 1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Data extends Instance {
@@ -14,10 +15,10 @@ class Data extends Instance {
 		),
 	);
 
-	const TB_FAILURE = 'dologin_failure' ;
-	const TB_SMS = 'dologin_sms' ;
-	const TB_PSWDLESS = 'dologin_pswdless' ;
-	const TB_SITE = 'dologin_site' ;
+	const TB_FAILURE  = 'dologin_failure';
+	const TB_SMS      = 'dologin_sms';
+	const TB_PSWDLESS = 'dologin_pswdless';
+	const TB_SITE     = 'dologin_site';
 
 	/**
 	 * Data upgrade
@@ -25,20 +26,20 @@ class Data extends Instance {
 	 * @since  1.4.1
 	 */
 	public function conf_upgrade() {
-		require_once DOLOGIN_DIR . 'src/data.upgrade.func.php' ;
+		require_once DOLOGIN_DIR . 'src/data.upgrade.func.php';
 
 		foreach ( $this->_db_updater as $k => $v ) {
 			if ( version_compare( DOLOGIN_CUR_V, $k, '<' ) ) {
 				// run each callback
 				foreach ( $v as $v2 ) {
-					defined( 'debug' ) && debug( "[Data] Updating [ori_v] " . DOLOGIN_CUR_V . " \t[to] $k \t[func] $v2" ) ;
-					call_user_func( $v2 ) ;
+					defined( 'debug' ) && debug( '[Data] Updating [ori_v] ' . DOLOGIN_CUR_V . " \t[to] $k \t[func] $v2" );
+					call_user_func( $v2 );
 				}
 			}
 		}
 
-		Conf::delete( '_ver' ) ;
-		Conf::add( '_ver', Core::VER ) ;
+		Conf::delete( '_ver' );
+		Conf::add( '_ver', Core::VER );
 
 		Util::version_check( 'upgrade' );
 	}
@@ -50,29 +51,24 @@ class Data extends Instance {
 	 * @access public
 	 */
 	public function tb( $tb ) {
-		global $wpdb ;
+		global $wpdb;
 
 		switch ( $tb ) {
 			case 'failure':
 				return $wpdb->prefix . self::TB_FAILURE;
-				break;
 
 			case 'sms':
 				return $wpdb->prefix . self::TB_SMS;
-				break;
 
 			case 'pswdless':
 				return $wpdb->prefix . self::TB_PSWDLESS;
-				break;
 
 			case 'site':
 				return $wpdb->prefix . self::TB_SITE;
-				break;
 
 			default:
 				break;
 		}
-
 	}
 
 	/**
@@ -82,8 +78,8 @@ class Data extends Instance {
 	 * @access public
 	 */
 	public function tb_exist( $tb ) {
-		global $wpdb ;
-		return $wpdb->get_var( 'SHOW TABLES LIKE "' . $this->tb( $tb ) . '"' ) ;
+		global $wpdb;
+		return $wpdb->get_var( 'SHOW TABLES LIKE "' . $this->tb( $tb ) . '"' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 	}
 
 	/**
@@ -93,7 +89,7 @@ class Data extends Instance {
 	 * @access private
 	 */
 	private function _tb_structure( $tb ) {
-		return f::read( DOLOGIN_DIR . 'src/data_structure/' . $tb . '.sql' ) ;
+		return f::read( DOLOGIN_DIR . 'src/data_structure/' . $tb . '.sql' );
 	}
 
 	/**
@@ -121,7 +117,7 @@ class Data extends Instance {
 			$wpdb->get_charset_collate() // 'DEFAULT CHARSET=utf8'
 		);
 
-		$res = $wpdb->query( $sql );
+		$res = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 		if ( $res !== true ) {
 			defined( 'debug' ) && debug( '[Data] Warning! Creating table failed!', $sql );
 		}
@@ -134,16 +130,16 @@ class Data extends Instance {
 	 * @access public
 	 */
 	public function tb_del( $tb ) {
-		global $wpdb ;
+		global $wpdb;
 
 		if ( ! $this->tb_exist( $tb ) ) {
-			return ;
+			return;
 		}
 
-		defined( 'debug' ) && debug( '[Data] Deleting table ' . $tb ) ;
+		defined( 'debug' ) && debug( '[Data] Deleting table ' . $tb );
 
-		$q = 'DROP TABLE IF EXISTS ' . $this->tb( $tb ) ;
-		$wpdb->query( $q ) ;
+		$q = 'DROP TABLE IF EXISTS ' . $this->tb( $tb );
+		$wpdb->query( $q ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 	}
 
 	/**
@@ -153,7 +149,7 @@ class Data extends Instance {
 	 * @access public
 	 */
 	public function tables_create() {
-		global $wpdb ;
+		global $wpdb;
 
 		$this->tb_create( 'failure' );
 		$this->tb_create( 'sms' );
@@ -168,13 +164,11 @@ class Data extends Instance {
 	 * @access public
 	 */
 	public function tables_del() {
-		global $wpdb ;
+		global $wpdb;
 
 		$this->tb_del( 'failure' );
 		$this->tb_del( 'sms' );
 		$this->tb_del( 'pswdless' );
 		$this->tb_del( 'site' );
 	}
-
-
 }

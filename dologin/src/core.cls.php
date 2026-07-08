@@ -5,6 +5,7 @@
  * @since 1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Core extends Instance {
@@ -40,8 +41,8 @@ class Core extends Instance {
 		$this->cls( 'Site' )->init();
 
 		register_activation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::activate' );
-		register_deactivation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::deactivate' ) ;
-		register_uninstall_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::uninstall' ) ;
+		register_deactivation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::deactivate' );
+		register_uninstall_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::uninstall' );
 
 		$this->cls( 'Lang' )->init();
 	}

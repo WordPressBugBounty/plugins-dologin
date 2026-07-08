@@ -5,6 +5,7 @@
  * @since 3.5
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Installer extends Instance {
@@ -15,20 +16,20 @@ class Installer extends Instance {
 	 *
 	 * @since 3.5
 	 */
-    private function _install_3rd() {
-        $this->dash_notifier_install_3rd();
+	private function _install_3rd() {
+		$this->dash_notifier_install_3rd();
 
-        wp_redirect( $_SERVER[ 'HTTP_REFERER' ] );
+		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url() );
 		exit;
-    }
+	}
 
-    /**
+	/**
 	 * Detect if the plugin is active or not
 	 *
 	 * @since  1.0
 	 */
 	public function dash_notifier_is_plugin_active( $plugin ) {
-		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 		$plugin_path = $plugin . '/' . $plugin . '.php';
 
@@ -41,7 +42,7 @@ class Installer extends Instance {
 	 * @since  1.0
 	 */
 	public function dash_notifier_is_plugin_installed( $plugin ) {
-		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		include_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 		$plugin_path = $plugin . '/' . $plugin . '.php';
 
@@ -56,7 +57,7 @@ class Installer extends Instance {
 	 * @since  1.0
 	 */
 	public function dash_notifier_get_plugin_info( $slug ) {
-		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
+		include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
 		$result = plugins_api( 'plugin_information', array( 'slug' => $slug ) );
 
 		if ( is_wp_error( $result ) ) {
@@ -72,9 +73,9 @@ class Installer extends Instance {
 	 * @since  1.0
 	 */
 	public function dash_notifier_install_3rd() {
-		! defined( 'SILENCE_INSTALL' ) && define( 'SILENCE_INSTALL', true );
+		! defined( 'SILENCE_INSTALL' ) && define( 'SILENCE_INSTALL', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- documented public API constant toggling silent install.
 
-		$slug = ! empty( $_GET[ 'plugin' ] ) ? $_GET[ 'plugin' ] : false;
+		$slug = ! empty( $_GET['plugin'] ) ? sanitize_text_field( wp_unslash( $_GET['plugin'] ) ) : false; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce().
 
 		// Check if plugin is installed already
 		if ( ! $slug || $this->dash_notifier_is_plugin_active( $slug ) ) {
@@ -98,9 +99,9 @@ class Installer extends Instance {
 			// Try to install plugin
 			try {
 				ob_start();
-				$skin = new \Automatic_Upgrader_Skin();
+				$skin     = new \Automatic_Upgrader_Skin();
 				$upgrader = new \Plugin_Upgrader( $skin );
-				$result = $upgrader->install( $plugin_info->download_link );
+				$result   = $upgrader->install( $plugin_info->download_link );
 				ob_end_clean();
 			} catch ( \Exception $e ) {
 				return;
@@ -110,7 +111,6 @@ class Installer extends Instance {
 		if ( ! is_plugin_active( $plugin_path ) ) {
 			activate_plugin( $plugin_path );
 		}
-
 	}
 
 	/**

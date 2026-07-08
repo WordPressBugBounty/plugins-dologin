@@ -8,19 +8,18 @@
 
 namespace dologin;
 
-defined('WPINC') || exit;
+defined( 'WPINC' ) || exit;
 
-class Auth extends Instance
-{
+class Auth extends Instance {
+
 	const TYPE_CLEAR_LOG = 'clear_log';
 
 	private $_tb;
 	private $__data;
 
-	protected function __construct()
-	{
-		$this->__data = $this->cls('Data');
-		$this->_tb = $this->__data->tb('failure');
+	protected function __construct() {
+		$this->__data = $this->cls( 'Data' );
+		$this->_tb    = $this->__data->tb( 'failure' );
 	}
 
 	/**
@@ -29,33 +28,29 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	public function init()
-	{
-		add_action('login_head', array($this, 'login_head'));
-		add_filter('authenticate', array($this, 'authenticate'), 2, 3);
+	public function init() {
+		add_action( 'login_head', array( $this, 'login_head' ) );
+		add_filter( 'authenticate', array( $this, 'authenticate' ), 2, 3 );
 		// Save phone number for new reg
-		add_filter('register_new_user', array($this, 'register_new_user'));
+		add_filter( 'register_new_user', array( $this, 'register_new_user' ) );
 
 		// Recaptcha validation
-		add_filter('registration_errors', array($this, 'registration_errors'));
-		add_filter('lostpassword_errors', array($this, 'lostpassword_errors'));
+		add_filter( 'registration_errors', array( $this, 'registration_errors' ) );
+		add_filter( 'lostpassword_errors', array( $this, 'lostpassword_errors' ) );
 
-		if (Conf::val('2fa')) {
-			add_filter('authenticate', array($this->cls('TwoFA'), 'authenticate'), 30, 3); // Need to be after WP auth check
+		if ( Conf::val( '2fa' ) ) {
+			add_filter( 'authenticate', array( $this->cls( 'TwoFA' ), 'authenticate' ), 30, 3 ); // Need to be after WP auth check
 		}
-		// elseif ( Conf::val( 'sms' ) ) {
-		// 	add_filter( 'authenticate', array( $this->cls( 'SMS' ), 'authenticate' ), 30, 3 ); // Need to be after WP auth check
-		// }
 
-		add_action('wp_login_failed', array($this, 'wp_login_failed'));
+		add_action( 'wp_login_failed', array( $this, 'wp_login_failed' ) );
 
 		// XMLRPC
-		if (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) {
-			add_action('init', array($this, 'check_xmlrpc'));
+		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
+			add_action( 'init', array( $this, 'check_xmlrpc' ) );
 		}
 
 		// Add notices for XMLRPC request
-		add_filter('xmlrpc_login_error', array($this, 'xmlrpc_error_msg'));
+		add_filter( 'xmlrpc_login_error', array( $this, 'xmlrpc_error_msg' ) );
 	}
 
 	/**
@@ -64,16 +59,15 @@ class Auth extends Instance
 	 * @since 1.9
 	 * @access public
 	 */
-	public function registration_errors($errors)
-	{
-		if (Conf::val('cf') && Conf::val('recapt_register')) {
+	public function registration_errors( $errors ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
 			try {
-				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
-			} catch (\Exception $ex) {
+				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined('debug') && debug('❌ reCAPTCHA error: ' . $err_code);
+				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
 
-				$errors->add('captcha_err', Lang::msg($err_code));
+				$errors->add( 'captcha_err', Lang::msg( $err_code ) );
 			}
 		}
 
@@ -86,16 +80,15 @@ class Auth extends Instance
 	 * @since 1.9
 	 * @access public
 	 */
-	public function lostpassword_errors($errors)
-	{
-		if (Conf::val('cf') && Conf::val('recapt_forget')) {
+	public function lostpassword_errors( $errors ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_forget' ) ) {
 			try {
-				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
-			} catch (\Exception $ex) {
+				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined('debug') && debug('❌ reCAPTCHA error: ' . $err_code);
+				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
 
-				$errors->add('captcha_err', Lang::msg($err_code));
+				$errors->add( 'captcha_err', Lang::msg( $err_code ) );
 			}
 		}
 
@@ -108,20 +101,21 @@ class Auth extends Instance
 	 * @since 1.8
 	 * @access public
 	 */
-	public function register_new_user($uid)
-	{
-		if (empty($_POST['phone_number'])) {
+	public function register_new_user( $uid ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['phone_number'] ) ) {
 			return;
 		}
 
-		$num = preg_replace('/\D/', '', $_POST['phone_number']);
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$num = preg_replace( '/\D/', '', sanitize_text_field( wp_unslash( $_POST['phone_number'] ) ) );
 
-		if (!$num) {
+		if ( ! $num ) {
 			return;
 		}
 
 		// Save phone
-		update_user_meta($uid, 'phone_number', $num);
+		update_user_meta( $uid, 'phone_number', $num );
 	}
 
 	/**
@@ -130,28 +124,31 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	public function login_head()
-	{
+	public function login_head() {
 		global $error;
 
-		if (defined('DOLOGIN_ERR')) {
+		if ( defined( 'DOLOGIN_ERR' ) ) {
 			return;
 		}
 
 		// check whitelist
-		if (!$this->try_whitelist()) {
-			$error .= Lang::msg('not_in_whitelist');
+		if ( ! $this->try_whitelist() ) {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- appending to the WP login $error global by design.
+			$error .= Lang::msg( 'not_in_whitelist' );
 			return;
 		}
 
 		// check blacklist
-		if ($this->try_blacklist()) {
-			$error .= Lang::msg('in_blacklist');
+		if ( $this->try_blacklist() ) {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- appending to the WP login $error global by design.
+			$error .= Lang::msg( 'in_blacklist' );
 			return;
 		}
 
 		// Check if has login error
-		if ($err_msg = $this->_has_login_err(true)) {
+		$err_msg = $this->_has_login_err( true );
+		if ( $err_msg ) {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- appending to the WP login $error global by design.
 			$error .= $err_msg;
 			return;
 		}
@@ -163,42 +160,53 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access private
 	 */
-	private function _has_login_err($msg_only = false, $duration_rate = false, $retry_rate = false)
-	{
+	private function _has_login_err( $msg_only = false, $duration_rate = false, $retry_rate = false ) {
 		global $wpdb;
 
 		$ip = IP::me();
-		if (Conf::val('gdpr')) {
-			$ip = md5($ip);
+		if ( Conf::val( 'gdpr' ) ) {
+			$ip = md5( $ip );
 		}
 
-		$duration = intval(Conf::val('duration')) * 60;
-		if ($duration_rate) {
+		$duration = intval( Conf::val( 'duration' ) ) * 60;
+		if ( $duration_rate ) {
 			$duration *= $duration_rate;
 		}
 
 		$q = "SELECT COUNT(*) FROM `$this->_tb` WHERE ip = %s AND dateline > %s";
-		$err_count = $wpdb->get_var($wpdb->prepare($q, array($ip, time() - $duration)));
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
+		$err_count = $wpdb->get_var( $wpdb->prepare( $q, array( $ip, time() - $duration ) ) );
 
-		if (!$err_count) {
+		if ( ! $err_count ) {
 			return false;
 		}
 
-		$max_retries = Conf::val('max_retries');
-		if ($retry_rate) {
+		$max_retries = Conf::val( 'max_retries' );
+		if ( $retry_rate ) {
 			$max_retries *= $retry_rate;
 		}
 
 		// Block visit
-		if ($err_count < $max_retries) {
-			if ($msg_only) {
-				return Lang::msg('max_retries', $max_retries - $err_count);
+		if ( $err_count < $max_retries ) {
+			if ( $msg_only ) {
+				return Lang::msg( 'max_retries', $max_retries - $err_count );
 			}
 			return false;
 		}
 
 		// Can try but has failure
-		return Lang::msg('max_retries_hit');
+		return Lang::msg( 'max_retries_hit' );
+	}
+
+	/**
+	 * Public check: is the current visitor IP currently over the failure limit?
+	 * Reused by tokenized login endpoints (passwordless / site easy-login) that bypass the wp-login flow.
+	 *
+	 * @since  4.4
+	 * @access public
+	 */
+	public function is_rate_limited() {
+		return (bool) $this->_has_login_err();
 	}
 
 	/**
@@ -207,68 +215,65 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	public function authenticate($user, $username, $password)
-	{
-		if (empty($username) || empty($password)) {
-			defined('debug') && debug('lack_of_u/p');
+	public function authenticate( $user, $username, $password ) {
+		if ( empty( $username ) || empty( $password ) ) {
+			defined( 'debug' ) && debug( 'lack_of_u/p' );
 			return $user;
 		}
 
-		if (is_wp_error($user)) {
-			defined('debug') && debug('error already');
+		if ( is_wp_error( $user ) ) {
+			defined( 'debug' ) && debug( 'error already' );
 			return $user;
 		}
 
 		$in_whitelist = $this->try_whitelist();
-		// if ( $in_whitelist === 'hit' ) {
-		// 	return $user;
-		// }
 
 		$error = new \WP_Error();
 
-		if (!$in_whitelist) {
-			if (Util::is_login_page()) { // woo login won't check this
-				defined('debug') && debug('❌ not_in_whitelist');
-				$error->add('not_in_whitelist', Lang::msg('not_in_whitelist'));
-				define('DOLOGIN_ERR', true);
+		if ( ! $in_whitelist ) {
+			if ( Util::is_login_page() ) { // woo login won't check this
+				defined( 'debug' ) && debug( '❌ not_in_whitelist' );
+				$error->add( 'not_in_whitelist', Lang::msg( 'not_in_whitelist' ) );
+				define( 'DOLOGIN_ERR', true );
 			}
 		}
 
-		if ($this->try_blacklist()) {
-			defined('debug') && debug('❌ in_blacklist');
-			$error->add('in_blacklist', Lang::msg('in_blacklist'));
-			define('DOLOGIN_ERR', true);
+		if ( $this->try_blacklist() ) {
+			defined( 'debug' ) && debug( '❌ in_blacklist' );
+			$error->add( 'in_blacklist', Lang::msg( 'in_blacklist' ) );
+			define( 'DOLOGIN_ERR', true );
 		}
 
-		if (!defined('DOLOGIN_ERR')) {
-			if ($err_msg = $this->_has_login_err()) {
-				defined('debug') && debug('❌ _has_login_err');
-				$error->add('in_blacklist', $err_msg);
-				define('DOLOGIN_ERR', true);
+		if ( ! defined( 'DOLOGIN_ERR' ) ) {
+			$err_msg = $this->_has_login_err();
+			if ( $err_msg ) {
+				defined( 'debug' ) && debug( '❌ _has_login_err' );
+				$error->add( 'in_blacklist', $err_msg );
+				define( 'DOLOGIN_ERR', true );
 			}
 		}
 
-		// reCAPTCHA validate
-		if (!defined('DOLOGIN_ERR') && Conf::val('cf')) { #  && SMS::is_dry_run()
+		// reCAPTCHA validate. Skip XML-RPC: machine clients cannot solve a captcha, and XML-RPC is already covered by the IP limiter + white/blacklist via check_xmlrpc().
+		if ( ! defined( 'DOLOGIN_ERR' ) && Conf::val( 'cf' ) && ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
 			try {
-				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
-			} catch (\Exception $ex) {
+				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined('debug') && debug('❌ reCAPTCHA error: ' . $err_code);
+				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
 
-				$error->add('captcha_err', Lang::msg($err_code));
-				define('DOLOGIN_ERR', true);
+				$error->add( 'captcha_err', Lang::msg( $err_code ) );
+				define( 'DOLOGIN_ERR', true );
 			}
 		}
 
-		if (defined('DOLOGIN_ERR')) {
+		if ( defined( 'DOLOGIN_ERR' ) ) {
 			// bypass verifying user info
-			remove_filter('authenticate', 'wp_authenticate_username_password', 20);
-			remove_filter('authenticate', 'wp_authenticate_email_password', 20);
+			remove_filter( 'authenticate', 'wp_authenticate_username_password', 20 );
+			remove_filter( 'authenticate', 'wp_authenticate_email_password', 20 );
 			return $error;
 		}
 
-		defined('debug') && debug('✅ passed');
+		defined( 'debug' ) && debug( '✅ passed' );
 
 		return $user;
 	}
@@ -279,14 +284,13 @@ class Auth extends Instance
 	 * @since  1.2
 	 * @access public
 	 */
-	public function check_xmlrpc()
-	{
-		if (is_user_logged_in()) {
+	public function check_xmlrpc() {
+		if ( is_user_logged_in() ) {
 			return;
 		}
 
-		if (!$this->try_whitelist() || $this->try_blacklist() || $this->_has_login_err()) {
-			header('HTTP/1.0 403 Forbidden');
+		if ( ! $this->try_whitelist() || $this->try_blacklist() || $this->_has_login_err() ) {
+			header( 'HTTP/1.0 403 Forbidden' );
 			exit;
 		}
 	}
@@ -297,22 +301,22 @@ class Auth extends Instance
 	 * @since  1.2
 	 * @access public
 	 */
-	public function xmlrpc_error_msg($err)
-	{
-		if (!class_exists('IXR_Error')) {
+	public function xmlrpc_error_msg( $err ) {
+		if ( ! class_exists( 'IXR_Error' ) ) {
 			return $err;
 		}
 
-		if (!$this->try_whitelist()) {
-			return new \IXR_Error(403, Lang::msg('not_in_whitelist'));
+		if ( ! $this->try_whitelist() ) {
+			return new \IXR_Error( 403, Lang::msg( 'not_in_whitelist' ) );
 		}
 
-		if ($this->try_blacklist()) {
-			return new \IXR_Error(403, Lang::msg('in_blacklist'));
+		if ( $this->try_blacklist() ) {
+			return new \IXR_Error( 403, Lang::msg( 'in_blacklist' ) );
 		}
 
-		if ($err_msg = $this->_has_login_err()) {
-			return new \IXR_Error(403, $err_msg);
+		$err_msg = $this->_has_login_err();
+		if ( $err_msg ) {
+			return new \IXR_Error( 403, $err_msg );
 		}
 
 		return $err;
@@ -324,39 +328,40 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	public function wp_login_failed($user)
-	{
+	public function wp_login_failed( $user ) {
 		global $wpdb;
 
 		$ip = IP::me();
 
 		// Parse Geo info
-		$ip_geo_list = IP::geo($ip);
-		unset($ip_geo_list['ip']);
+		$ip_geo_list = IP::geo( $ip );
+		unset( $ip_geo_list['ip'] );
 		$ip_geo = array();
-		foreach ($ip_geo_list as $k => $v) {
+		foreach ( $ip_geo_list as $k => $v ) {
 			$ip_geo[] = $k . ':' . $v;
 		}
-		$ip_geo = implode(', ', $ip_geo);
+		$ip_geo = implode( ', ', $ip_geo );
 
 		// GDPR compliance
-		if (Conf::val('gdpr')) {
-			$ip = md5($ip);
+		if ( Conf::val( 'gdpr' ) ) {
+			$ip = md5( $ip );
 		}
 
 		// Parse gateway
 		$gateway = 'WP Login';
-		if (isset($_POST['woocommerce-login-nonce'])) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( isset( $_POST['woocommerce-login-nonce'] ) ) {
 			$gateway = 'WooCommerce';
-		} elseif (isset($GLOBALS['wp_xmlrpc_server']) && is_object($GLOBALS['wp_xmlrpc_server'])) {
+		} elseif ( isset( $GLOBALS['wp_xmlrpc_server'] ) && is_object( $GLOBALS['wp_xmlrpc_server'] ) ) {
 			$gateway = 'XMLRPC';
 		}
 
 		// If the are more than limited, bypass log
-		$err_msg = $this->_has_login_err(false, 10);
-		if (!$err_msg) {
+		$err_msg = $this->_has_login_err( false, 10 );
+		if ( ! $err_msg ) {
 			$q = "INSERT INTO `$this->_tb` SET ip = %s, ip_geo = %s, username = %s, gateway = %s, dateline = %s";
-			$wpdb->query($wpdb->prepare($q, array($ip, $ip_geo, $user, $gateway, time())));
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
+			$wpdb->query( $wpdb->prepare( $q, array( $ip, $ip_geo, $user, $gateway, time() ) ) );
 		}
 	}
 
@@ -366,45 +371,51 @@ class Auth extends Instance
 	 * @since  2.7
 	 * @access public
 	 */
-	public function history_list($limit, $offset = false)
-	{
+	public function history_list( $limit, $offset = false ) {
 		global $wpdb;
 
-		if ($offset === false) {
-			$total = $this->count_list();
-			$offset = Util::pagination($total, $limit, true);
+		if ( $offset === false ) {
+			$total  = $this->count_list();
+			$offset = Util::pagination( $total, $limit, true );
 		}
 
 		$q = "SELECT * FROM `$this->_tb` ORDER BY id DESC LIMIT %d, %d";
-		return $wpdb->get_results($wpdb->prepare($q, $offset, $limit));
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
+		return $wpdb->get_results( $wpdb->prepare( $q, $offset, $limit ) );
 	}
 
 	/**
 	 * Count the log list
 	 */
-	public function count_list()
-	{
+	public function count_list() {
 		global $wpdb;
 
-		if (!$this->__data->tb_exist('failure')) {
+		if ( ! $this->__data->tb_exist( 'failure' ) ) {
 			return false;
 		}
 
 		$q = "SELECT COUNT(*) FROM `$this->_tb`";
-		return $wpdb->get_var($q);
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; no user input.
+		return $wpdb->get_var( $q );
 	}
 
 	/**
 	 * Delete old log
 	 */
-	public function _clear_log()
-	{
+	public function _clear_log() {
 		global $wpdb;
 
 		$q = "DELETE FROM `$this->_tb` WHERE dateline < %d";
-		$count = $wpdb->query($wpdb->prepare($q, time() - 86400 * 30));
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; value is prepared.
+		$count = $wpdb->query( $wpdb->prepare( $q, time() - 86400 * 30 ) );
 
-		GUI::succeed(sprintf(__('Cleared %d record(s) successfully!', 'dologin'), $count));
+		GUI::succeed(
+			sprintf(
+				/* translators: %d: number of cleared records. */
+				__( 'Cleared %d record(s) successfully!', 'dologin' ),
+				$count
+			)
+		);
 	}
 
 	/**
@@ -413,14 +424,13 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	private function try_whitelist()
-	{
-		$list = Conf::val('whitelist');
-		if (!$list) {
+	private function try_whitelist() {
+		$list = Conf::val( 'whitelist' );
+		if ( ! $list ) {
 			return true;
 		}
 
-		if ($this->cls('IP')->maybe_hit_rule($list)) {
+		if ( $this->cls( 'IP' )->maybe_hit_rule( $list ) ) {
 			return 'hit';
 		}
 
@@ -433,14 +443,13 @@ class Auth extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	private function try_blacklist()
-	{
-		$list = Conf::val('blacklist');
-		if (!$list) {
+	private function try_blacklist() {
+		$list = Conf::val( 'blacklist' );
+		if ( ! $list ) {
 			return false;
 		}
 
-		if ($this->cls('IP')->maybe_hit_rule($list)) {
+		if ( $this->cls( 'IP' )->maybe_hit_rule( $list ) ) {
 			return 'hit';
 		}
 
@@ -452,11 +461,10 @@ class Auth extends Instance
 	 *
 	 * @since  2.7
 	 */
-	public function handler()
-	{
+	public function handler() {
 		$type = Router::verify_type();
 
-		switch ($type) {
+		switch ( $type ) {
 			case self::TYPE_CLEAR_LOG:
 				$this->_clear_log();
 				break;

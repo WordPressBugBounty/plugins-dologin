@@ -2,11 +2,11 @@
 /**
  * Auto registration
  *
- * @since      	1.0
+ * @since       1.0
  */
 defined( 'WPINC' ) || exit;
 
-$php_files = array(
+$dologin_php_files = array(
 	// core file priority
 	'src/instance.cls.php',
 
@@ -32,9 +32,9 @@ $php_files = array(
 	'src/twofa.cls.php',
 	'src/util.cls.php',
 );
-foreach ($php_files as $class) {
-	$file = DOLOGIN_DIR . $class;
-	require_once $file;
+foreach ( $dologin_php_files as $dologin_class ) {
+	$dologin_file = DOLOGIN_DIR . $dologin_class;
+	require_once $dologin_file;
 }
 
 if ( ! function_exists( 'dologin_autoload' ) ) {
@@ -50,8 +50,7 @@ if ( ! function_exists( 'dologin_autoload' ) ) {
 
 		if ( strpos( $file, 'lib/' ) === 0 || strpos( $file, 'thirdparty/' ) === 0 ) {
 			$file = DOLOGIN_DIR . $file . '.cls.php';
-		}
-		else {
+		} else {
 			$file = DOLOGIN_DIR . 'src/' . $file . '.cls.php';
 		}
 
@@ -62,4 +61,3 @@ if ( ! function_exists( 'dologin_autoload' ) ) {
 }
 
 spl_autoload_register( 'dologin_autoload' );
-

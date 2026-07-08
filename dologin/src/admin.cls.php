@@ -5,6 +5,7 @@
  * @since 1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Admin extends Instance {
@@ -47,7 +48,7 @@ class Admin extends Instance {
 	public function admin_menu() {
 		add_options_page( 'DoLogin Security', 'DoLogin Security', apply_filters( 'dologin_admin_menu_access', 'manage_options' ), 'dologin', array( $this, 'setting_page' ) );
 
-		$this->cls('TwoFA')->maybe_save_2fa();
+		$this->cls( 'TwoFA' )->maybe_save_2fa();
 	}
 
 	/**
@@ -59,7 +60,7 @@ class Admin extends Instance {
 	public function admin_init() {
 		if ( get_transient( 'dologin_activation_redirect' ) ) {
 			delete_transient( 'dologin_activation_redirect' );
-			if ( ! is_network_admin() && ! isset( $_GET['activate-multi'] ) ) {
+			if ( ! is_network_admin() && ! isset( $_GET['activate-multi'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading WordPress core activation flag, no state change.
 				wp_safe_redirect( menu_page_url( 'dologin', 0 ) );
 			}
 		}
@@ -79,20 +80,20 @@ class Admin extends Instance {
 	 */
 	public function user_contactmethods( $contactmethods ) {
 		if ( ! array_key_exists( 'phone_number', $contactmethods ) ) {
-			$contactmethods[ 'phone_number' ] = __( 'Dologin Mobile Number', 'dologin' );
+			$contactmethods['phone_number'] = __( 'Dologin Mobile Number', 'dologin' );
 		}
 		if ( ! array_key_exists( '2fa', $contactmethods ) ) {
-			$contactmethods[ '2fa' ] = __( 'Dologin 2FA Secret', 'dologin' );
+			$contactmethods['2fa'] = __( 'Dologin 2FA Secret', 'dologin' );
 		}
 		return $contactmethods;
 	}
 
 	public function manage_users_columns( $column ) {
 		if ( ! array_key_exists( 'phone_number', $column ) ) {
-			$column[ 'phone_number' ] = __( 'Dologin Operations', 'dologin' );
+			$column['phone_number'] = __( 'Dologin Operations', 'dologin' );
 		}
 		if ( ! array_key_exists( '2fa', $column ) ) {
-			$column[ '2fa' ] = __( 'Dologin 2FA', 'dologin' );
+			$column['2fa'] = __( 'Dologin 2FA', 'dologin' );
 		}
 		return $column;
 	}
@@ -105,8 +106,8 @@ class Admin extends Instance {
 			}
 
 			// Append gen link
-			$val .= '<div class="dologin"><a href="' . Util::build_url( Router::ACTION_SITE, Site::TYPE_GEN_TOKEN, false, null, array( 'uid' => $user_id ) ) . '" class="button dologin-btn-tiny dologin-btn-success dologin-mb10">' . __( 'Create Site Token', 'dologin' ) . '</a>';
-			$val .= ' <a href="' . Util::build_url( Router::ACTION_PSWD, Pswdless::TYPE_GEN, false, null, array( 'uid' => $user_id ) ) . '" class="button dologin-btn-primary dologin-btn-tiny">' . __( 'Generate Login Link', 'dologin' ) . '</a></div>';
+			$val .= '<div class="dologin"><a href="' . esc_url( Util::build_url( Router::ACTION_SITE, Site::TYPE_GEN_TOKEN, false, null, array( 'uid' => $user_id ) ) ) . '" class="button dologin-btn-tiny dologin-btn-success dologin-mb10">' . esc_html__( 'Create Site Token', 'dologin' ) . '</a>';
+			$val .= ' <a href="' . esc_url( Util::build_url( Router::ACTION_PSWD, Pswdless::TYPE_GEN, false, null, array( 'uid' => $user_id ) ) ) . '" class="button dologin-btn-primary dologin-btn-tiny">' . esc_html__( 'Generate Login Link', 'dologin' ) . '</a></div>';
 
 			return $val;
 		}
@@ -148,19 +149,19 @@ class Admin extends Instance {
 			$raw_data = self::cleanup_text( $_POST );
 
 			// Save options
-			$list = array() ;
+			$list = array();
 
 			foreach ( $this->cls( 'Conf' )->get_options() as $id => $v ) {
 				if ( substr( $id, 0, 1 ) === '_' ) {
 					continue;
 				}
 
-				$list[ $id ] = ! empty( $raw_data[ $id ] ) ? $raw_data[ $id ] : false ;
+				$list[ $id ] = ! empty( $raw_data[ $id ] ) ? $raw_data[ $id ] : false;
 			}
 
 			// Special handler for list
-			$list[ 'whitelist' ] = $this->_sanitize_list( $raw_data[ 'whitelist' ] );
-			$list[ 'blacklist' ] = $this->_sanitize_list( $raw_data[ 'blacklist' ] );
+			$list['whitelist'] = $this->_sanitize_list( $raw_data['whitelist'] );
+			$list['blacklist'] = $this->_sanitize_list( $raw_data['blacklist'] );
 
 			foreach ( $list as $id => $v ) {
 				Conf::update( $id, $v );
@@ -168,7 +169,7 @@ class Admin extends Instance {
 
 			GUI::succeed( __( 'Options saved successfully!', 'dologin' ), true );
 
-			wp_redirect( $_SERVER[ 'HTTP_REFERER' ] );
+			wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url() );
 			exit;
 		}
 
@@ -180,8 +181,7 @@ class Admin extends Instance {
 	 *
 	 * @access public
 	 */
-	public static function cleanup_text( $input )
-	{
+	public static function cleanup_text( $input ) {
 		if ( is_array( $input ) ) {
 			return array_map( __CLASS__ . '::cleanup_text', $input );
 		}
@@ -216,11 +216,11 @@ class Admin extends Instance {
 	public function pswdless_log() {
 		global $wpdb;
 
-		$list = $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'pswdless' ) . ' ORDER BY id DESC' );
+		$list = $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'pswdless' ) . ' ORDER BY id DESC' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 		foreach ( $list as $k => $v ) {
-			$user_info = get_userdata( $v->user_id );
+			$user_info            = get_userdata( $v->user_id );
 			$list[ $k ]->username = $user_info->user_login;
-			$list[ $k ]->link = admin_url( '?dologin=' . $v->id . '.' . $v->hash );
+			$list[ $k ]->link     = admin_url( '?dologin=' . $v->id . '.' . $v->hash );
 		}
 
 		return $list;
@@ -235,25 +235,25 @@ class Admin extends Instance {
 	public function sites() {
 		global $wpdb;
 
-		$list = $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'site' ) . ' ORDER BY id DESC' );
+		$list = $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'site' ) . ' ORDER BY id DESC' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 		foreach ( $list as $k => $v ) {
-			$user_info = get_userdata( $v->user_id );
+			$user_info            = get_userdata( $v->user_id );
 			$list[ $k ]->username = $user_info->user_login;
-			$roles = array();
-			$token = '';
-			$easy_login = '';
+			$roles                = array();
+			$token                = '';
+			$easy_login           = '';
 			if ( $v->is_child ) {
 				$roles = $user_info->roles;
-				$token = base64_encode( admin_url( '?' . Site::QS_NAME_ROOT_AUTH . '=' . $v->id . '.' . $v->hash ) );
+				$token = base64_encode( admin_url( '?' . Site::QS_NAME_ROOT_AUTH . '=' . $v->id . '.' . $v->hash ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- benign base64 of a URL token.
 			} else {
 				$easy_login = Util::build_url( Router::ACTION_SITE, Site::TYPE_EASY_LOGIN, false, null, array( 'dologin_id' => $v->id ) );
 			}
-			$list[ $k ]->roles = $roles;
-			$list[ $k ]->token = $token;
+			$list[ $k ]->roles      = $roles;
+			$list[ $k ]->token      = $token;
 			$list[ $k ]->easy_login = $easy_login;
 			$list[ $k ]->_lock_link = Util::build_url( Router::ACTION_SITE, Pswdless::TYPE_LOCK, false, null, array( 'dologin_id' => $v->id ) );
-			$list[ $k ]->_del_link = Util::build_url( Router::ACTION_SITE, Pswdless::TYPE_DEL, false, null, array( 'dologin_id' => $v->id ) );
-			$list[ $k ]->_valid = time() - $v->dateline <= 3600;
+			$list[ $k ]->_del_link  = Util::build_url( Router::ACTION_SITE, Pswdless::TYPE_DEL, false, null, array( 'dologin_id' => $v->id ) );
+			$list[ $k ]->_valid     = time() - $v->dateline <= 3600;
 		}
 
 		return $list;
@@ -267,6 +267,6 @@ class Admin extends Instance {
 	 */
 	public function sms_log() {
 		global $wpdb;
-		return $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'sms' ) . ' ORDER BY id DESC LIMIT 10' );
+		return $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'sms' ) . ' ORDER BY id DESC LIMIT 10' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- table name is a hardcoded internal identifier.
 	}
 }

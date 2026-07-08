@@ -1,28 +1,29 @@
 <?php
-
 /**
  * Captcha class
  *
  * @since 1.6
+ * @package dologin
  */
 
 namespace dologin;
 
-defined('WPINC') || exit;
+defined( 'WPINC' ) || exit;
 
-class Captcha extends Instance
-{
+class Captcha extends Instance {
+
 	/**
 	 * Display recaptcha
 	 *
 	 * @since  1.6
 	 */
-	public function show()
-	{
-		wp_register_script('dologin_cf_api', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), null);
-		wp_enqueue_script('dologin_cf_api');
+	public function show() {
+		// Cloudflare Turnstile must load its api.js from Cloudflare's domain; it cannot be self-hosted.
+		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
+		wp_register_script( 'dologin_cf_api', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), Core::VER, true );
+		wp_enqueue_script( 'dologin_cf_api' );
 
-		echo '<div class="cf-turnstile" data-sitekey="' . Conf::val('cf_pub_key') . '"></div>';
+		echo '<div class="cf-turnstile" data-sitekey="' . esc_attr( Conf::val( 'cf_pub_key' ) ) . '"></div>';
 	}
 
 	/**
@@ -30,46 +31,57 @@ class Captcha extends Instance
 	 *
 	 * @since  1.6
 	 */
-	public function authenticate()
-	{
-		// Validate
-		if (empty($_POST['cf-turnstile-response'])) {
-			throw new \Exception('captcha_missing');
+	public function authenticate() {
+		// This runs on the public login form / REST 2-step and is authenticated by the Turnstile token itself, not a WP nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['cf-turnstile-response'] ) ) {
+			throw new \Exception( 'captcha_missing' );
 		}
 
-		// Check if stored token matches, then bypass
-		if ($this->_validate_token()) {
-			defined('debug') && debug('✅ bypassed, token matched');
+		// Check if stored token matches, then bypass.
+		if ( $this->_validate_token() ) {
+			defined( 'debug' ) && debug( '✅ bypassed, token matched' );
 			return;
 		}
 
-		$url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$cf_response = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) );
+
+		// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Cloudflare Turnstile verification endpoint; required by the captcha feature and cannot be self-hosted.
+		$url  = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 		$data = array(
-			'secret' 	=> Conf::val('cf_priv_key'),
-			'response' 	=> $_POST['cf-turnstile-response'],
+			'secret'   => Conf::val( 'cf_priv_key' ),
+			'response' => $cf_response,
 			'remoteip' => IP::me(),
 		);
 
-		$res = wp_remote_post($url, array('body' => $data, 'timeout' => 15, 'sslverify' => false));
+		$res = wp_remote_post(
+			$url,
+			array(
+				'body'      => $data,
+				'timeout'   => 15,
+				'sslverify' => true,
+			)
+		);
 
-		if (is_wp_error($res)) {
+		if ( is_wp_error( $res ) ) {
 			$error_message = $res->get_error_message();
-			throw new \Exception($error_message);
+			throw new \Exception( esc_html( $error_message ) );
 		}
 
-		$res = json_decode($res['body'], true);
-		defined('debug') && debug('2fa challenge res:', $res);
+		$res = json_decode( $res['body'], true );
+		defined( 'debug' ) && debug( '2fa challenge res:', $res );
 
-		if (empty($res['success'])) {
-			$err_code = !empty($res['error-codes'][0]) ? $res['error-codes'][0] : 'error';
+		if ( empty( $res['success'] ) ) {
+			$err_code = ! empty( $res['error-codes'][0] ) ? $res['error-codes'][0] : 'error';
 
-			throw new \Exception($err_code);
+			throw new \Exception( esc_html( $err_code ) );
 		}
 
-		// Mark this session as trusted, to prevent duplicate check when submitting 2FA
+		// Mark this session as trusted, to prevent duplicate check when submitting 2FA.
 		$this->_store_token();
 
-		defined('debug') && debug('✅ passed');
+		defined( 'debug' ) && debug( '✅ passed' );
 	}
 
 	/**
@@ -78,9 +90,10 @@ class Captcha extends Instance
 	 * @since 4.2
 	 */
 	private function _store_token() {
-		$token = md5($_POST['cf-turnstile-response'] . IP::me());
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		$token      = md5( sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) . IP::me() );
 		$expiration = 5 * MINUTE_IN_SECONDS;
-		set_transient($this->_generate_token_tag(), $token, $expiration);
+		set_transient( $this->_generate_token_tag(), $token, $expiration );
 	}
 
 	/**
@@ -90,13 +103,17 @@ class Captcha extends Instance
 	 */
 	private function _generate_token_tag() {
 		$tag = IP::me();
-		if (!empty($_POST['log'])) {
-			$tag = $_POST['log'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['log'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$tag = sanitize_text_field( wp_unslash( $_POST['log'] ) );
 		}
-		if (!empty($_POST['user_login'])) {
-			$tag = $_POST['user_login'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['user_login'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$tag = sanitize_text_field( wp_unslash( $_POST['user_login'] ) );
 		}
-		return 'dologin_tmp_data_' . md5($tag);
+		return 'dologin_tmp_data_' . md5( $tag );
 	}
 
 	/**
@@ -105,12 +122,13 @@ class Captcha extends Instance
 	 * @since 4.2
 	 */
 	private function _validate_token() {
-		$token = md5($_POST['cf-turnstile-response'] . IP::me());
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		$token         = md5( sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) . IP::me() );
 		$transient_key = $this->_generate_token_tag();
-		$stored_token = get_transient($transient_key);
+		$stored_token  = get_transient( $transient_key );
 
-		if ($stored_token === $token) {
-			delete_transient($transient_key);
+		if ( $stored_token === $token ) {
+			delete_transient( $transient_key );
 			return true;
 		}
 

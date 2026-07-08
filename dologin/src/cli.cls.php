@@ -1,5 +1,6 @@
 <?php
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 use WP_CLI;
@@ -21,16 +22,15 @@ class CLI extends Instance {
 	 *
 	 *     # List all passwordless link
 	 *     $ wp dologin list
-	 *
 	 */
 	public function list() {
 		$list = $this->cls( 'Admin' )->pswdless_log();
 		foreach ( $list as $k => $v ) {
-			$list[ $k ] = (array) $v;
-			$user = get_user_by( 'id', $v->user_id );
-			$list[ $k ][ 'Login_Name' ] = $user ? $user->user_login : 'N/A';
-			$list[ $k ][ 'Expiration' ] = $v->expired_at > time() ? Util::readable_time( $v->expired_at - time(), 3600, false ) : __( 'Expired', 'dologin' );
-			$list[ $k ][ 'Created_At' ] = Util::readable_time( $v->dateline );
+			$list[ $k ]               = (array) $v;
+			$user                     = get_user_by( 'id', $v->user_id );
+			$list[ $k ]['Login_Name'] = $user ? $user->user_login : 'N/A';
+			$list[ $k ]['Expiration'] = $v->expired_at > time() ? Util::readable_time( $v->expired_at - time(), 3600, false ) : __( 'Expired', 'dologin' );
+			$list[ $k ]['Created_At'] = Util::readable_time( $v->dateline );
 		}
 		if ( $list ) {
 			WP_CLI\Utils\format_items( 'table', $list, array( 'id', 'Login_Name', 'Expiration', 'Created_At', 'onetime', 'active', 'count' ) );
@@ -46,11 +46,10 @@ class CLI extends Instance {
 	 *
 	 *     # Generate a passwordless link for one username
 	 *     $ wp dologin gen root
-	 *
 	 */
 	public function gen( $args ) {
-		$uname = $args[ 0 ];
-		$user = get_user_by( 'login', $uname );
+		$uname = $args[0];
+		$user  = get_user_by( 'login', $uname );
 		if ( ! $user ) {
 			WP_CLI::error( __( 'No related user.', 'dologin' ) );
 			return;
@@ -69,10 +68,9 @@ class CLI extends Instance {
 	 *
 	 *     # Delete the passwordless link (ID is 5)
 	 *     $ wp dologin del 5
-	 *
 	 */
 	public function del( $args ) {
-		$id = $args[ 0 ];
+		$id = $args[0];
 		if ( ! $id ) {
 			WP_CLI::error( __( 'No ID to delete.', 'dologin' ) );
 			return;

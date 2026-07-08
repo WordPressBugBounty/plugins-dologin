@@ -1,15 +1,16 @@
 <?php
 /**
-* File Operator
-*
-* @since 1.0
-*/
+ * File Operator
+ *
+ * @since 1.0
+ */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class f {
 	/**
-	 *	Delete folder
+	 *  Delete folder
 	 *
 	 * @since 1.0
 	 */
@@ -17,19 +18,19 @@ class f {
 		$files = array_diff( scandir( $dir ), array( '.', '..' ) );
 
 		foreach ( $files as $file ) {
-			is_dir( "$dir/$file" ) ? self::rrmdir( "$dir/$file" ) : unlink( "$dir/$file" );
+			is_dir( "$dir/$file" ) ? self::rrmdir( "$dir/$file" ) : wp_delete_file( "$dir/$file" );
 		}
 
-		return rmdir( $dir );
+		return rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- generic filesystem helper for the plugin's own data files.
 	}
 
-	public static function count_lines($filename) {
-		if ( ! file_exists($filename) ) {
+	public static function count_lines( $filename ) {
+		if ( ! file_exists( $filename ) ) {
 			return 0;
 		}
 
-		$file = new \SplFileObject($filename);
-		$file->seek(PHP_INT_MAX);
+		$file = new \SplFileObject( $filename );
+		$file->seek( PHP_INT_MAX );
 		return $file->key() + 1;
 	}
 
@@ -48,7 +49,7 @@ class f {
 		}
 
 		if ( $start_line !== null ) {
-			$res = array();
+			$res  = array();
 			$file = new \SplFileObject( $filename );
 			$file->seek( $start_line );
 
@@ -57,8 +58,7 @@ class f {
 					$res[] = rtrim( $file->current(), PHP_EOL );
 					$file->next();
 				}
-			}
-			else{
+			} else {
 				for ( $i = 0; $i < $lines; $i++ ) {
 					if ( $file->eof() ) {
 						break;
@@ -72,7 +72,7 @@ class f {
 			return $res;
 		}
 
-		$content = file_get_contents( $filename );
+		$content = file_get_contents( $filename ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- generic filesystem helper for the plugin's own data files.
 
 		$content = self::remove_zero_space( $content );
 
@@ -95,42 +95,45 @@ class f {
 	 * @since 1.0
 	 */
 	public static function save( $filename, $data, $mkdir = false, $append = false, $silence = true ) {
-		$error = false;
+		$error  = false;
 		$folder = dirname( $filename );
 
 		// mkdir if folder does not exist
 		if ( ! file_exists( $folder ) ) {
 			if ( ! $mkdir ) {
+				/* translators: %s: Folder path. */
 				return $silence ? false : sprintf( __( 'Folder does not exist: %s', 'dologin' ), $folder );
 			}
 
 			try {
-				mkdir( $folder, 0755, true );
-			}
-			catch ( \Exception $ex ) {
+				mkdir( $folder, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- generic filesystem helper for the plugin's own data files.
+			} catch ( \Exception $ex ) {
+				/* translators: 1: Folder path, 2: Error message. */
 				return $silence ? false : sprintf( __( 'Can not create folder: %1$s. Error: %2$s', 'dologin' ), $folder, $ex->getMessage() );
 			}
 		}
 
 		if ( ! file_exists( $filename ) ) {
-			if ( ! is_writable( $folder ) ) {
+			if ( ! is_writable( $folder ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- generic filesystem helper for the plugin's own data files.
+				/* translators: %s: Folder path. */
 				return $silence ? false : sprintf( __( 'Folder is not writable: %s.', 'dologin' ), $folder );
 			}
 			try {
-				touch( $filename );
-			}
-			catch ( \Exception $ex ){
+				touch( $filename ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- generic filesystem helper for the plugin's own data files.
+			} catch ( \Exception $ex ) {
+				/* translators: %s: File path. */
 				return $silence ? false : sprintf( __( 'File %s is not writable.', 'dologin' ), $filename );
 			}
-		}
-		elseif ( ! is_writeable( $filename ) ) {
+		} elseif ( ! is_writeable( $filename ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable -- generic filesystem helper for the plugin's own data files.
+			/* translators: %s: File path. */
 			return $silence ? false : sprintf( __( 'File %s is not writable.', 'dologin' ), $filename );
 		}
 
 		$data = self::remove_zero_space( $data );
 
-		$ret = file_put_contents( $filename, $data, $append ? FILE_APPEND : LOCK_EX );
+		$ret = file_put_contents( $filename, $data, $append ? FILE_APPEND : LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- generic filesystem helper for the plugin's own data files.
 		if ( $ret === false ) {
+			/* translators: %s: File path. */
 			return $silence ? false : sprintf( __( 'Failed to write to %s.', 'dologin' ), $filename );
 		}
 
@@ -159,7 +162,4 @@ class f {
 
 		return $content;
 	}
-
 }
-
-

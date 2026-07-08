@@ -1,15 +1,20 @@
 <?php
+/**
+ * Dashboard overview widget template.
+ *
+ * @package dologin
+ */
 
 namespace dologin;
 
-defined('WPINC') || exit;
+defined( 'WPINC' ) || exit;
 
-$list = $this->cls('Auth')->history_list(20);
-$count = $this->cls('Auth')->count_list();
-$is_admin = current_user_can('manage_options');
+$dologin_list     = $this->cls( 'Auth' )->history_list( 20 );
+$dologin_count    = $this->cls( 'Auth' )->count_list();
+$dologin_is_admin = current_user_can( 'manage_options' );
 
-echo '<h2>' . __('Blocked login attempts total', 'dologin') . ': ' . $count . '</h2>';
-echo '<h2>' . __('Login Attempts Log', 'dologin') . '</h2>';
+echo '<h2>' . esc_html__( 'Blocked login attempts total', 'dologin' ) . ': ' . (int) $dologin_count . '</h2>';
+echo '<h2>' . esc_html__( 'Login Attempts Log', 'dologin' ) . '</h2>';
 ?>
 <style type="text/css">
 	.dologin-widget-table {
@@ -43,30 +48,29 @@ echo '<h2>' . __('Login Attempts Log', 'dologin') . '</h2>';
 		</tr>
 	</thead>
 	<tbody>
-		<?php if (!$list) : ?>
+		<?php if ( ! $dologin_list ) : ?>
 			<tr>
-				<td><?php echo __('No list yet.', 'dologin'); ?></td>
+				<td><?php esc_html_e( 'No list yet.', 'dologin' ); ?></td>
 			</tr>
 		<?php else : ?>
 			<?php
-			foreach ($list as $k => $v) {
-				$ip_geo = explode(', ', $v->ip_geo);
-				$ip_geo_desc = array();
-				foreach ($ip_geo as $v2) {
-					$v2 = explode(':', $v2);
-					if (in_array($v2[0], array('country', 'city'))) {
-						$ip_geo_desc[] = $v2[1];
+			foreach ( $dologin_list as $dologin_v ) {
+				$dologin_ip_geo      = explode( ', ', $dologin_v->ip_geo );
+				$dologin_ip_geo_desc = array();
+				foreach ( $dologin_ip_geo as $dologin_v2 ) {
+					$dologin_v2 = explode( ':', $dologin_v2 );
+					if ( in_array( $dologin_v2[0], array( 'country', 'city' ), true ) ) {
+						$dologin_ip_geo_desc[] = $dologin_v2[1];
 					}
 				}
-				$ip_geo_desc = implode('-', $ip_geo_desc);
-				echo '<tr><td>' . (!$is_admin ? '**' : $v->ip) . '</td><td>' . $ip_geo_desc . '</td><td>' . date('m/d H:i', $v->dateline) . '</td></tr>';
+				$dologin_ip_geo_desc = implode( '-', $dologin_ip_geo_desc );
+				echo '<tr><td>' . ( ! $dologin_is_admin ? '**' : esc_html( $dologin_v->ip ) ) . '</td><td>' . esc_html( $dologin_ip_geo_desc ) . '</td><td>' . esc_html( date_i18n( 'm/d H:i', $dologin_v->dateline ) ) . '</td></tr>';
 			}
-
 			?>
 		<?php endif; ?>
 	</tbody>
 </table>
 
 <div>
-	<a href="<?php echo menu_page_url('dologin', 0); ?>#log" style="text-align: right; display: block;"><?php echo __('Check more', 'dologin'); ?></a>
+	<a href="<?php echo esc_url( menu_page_url( 'dologin', 0 ) ); ?>#log" style="text-align: right; display: block;"><?php esc_html_e( 'Check more', 'dologin' ); ?></a>
 </div>

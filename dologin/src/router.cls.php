@@ -5,17 +5,18 @@
  * @since 1.4
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Router extends Instance {
-	const NONCE = 'dologin_nonce';
+	const NONCE  = 'dologin_nonce';
 	const ACTION = 'dologin_action';
-	const TYPE = 'dologin_type';
-	const I = 'dologin_i';
+	const TYPE   = 'dologin_type';
+	const I      = 'dologin_i';
 
-	const ACTION_SITE = 'site';
-	const ACTION_PSWD = 'pswdless';
-	const ACTION_AUTH = 'auth';
+	const ACTION_SITE      = 'site';
+	const ACTION_PSWD      = 'pswdless';
+	const ACTION_AUTH      = 'auth';
 	const ACTION_INSTALLER = 'installer';
 
 	// List all handlers here
@@ -63,32 +64,31 @@ class Router extends Instance {
 		global $pagenow;
 		$qs = '';
 		if ( ! $url ) {
-			if ( ! empty( $_GET ) ) {
-				if ( isset( $_GET[ self::ACTION ] ) ) {
+			if ( ! empty( $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
+				if ( isset( $_GET[ self::ACTION ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 					unset( $_GET[ self::ACTION ] );
 				}
-				if ( isset( $_GET[ self::NONCE ] ) ) {
+				if ( isset( $_GET[ self::NONCE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 					unset( $_GET[ self::NONCE ] );
 				}
-				if ( isset( $_GET[ self::TYPE ] ) ) {
+				if ( isset( $_GET[ self::TYPE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 					unset( $_GET[ self::TYPE ] );
 				}
-				if ( isset( $_GET[ self::I ] ) ) {
+				if ( isset( $_GET[ self::I ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 					unset( $_GET[ self::I ] );
 				}
-				if ( ! empty( $_GET ) ) {
-					$qs = '?' . http_build_query( $_GET );
+				if ( ! empty( $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
+					$qs = '?' . http_build_query( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 				}
 			}
 			if ( is_network_admin() ) {
 				$url = network_admin_url( $pagenow . $qs );
-			}
-			else {
+			} else {
 				$url = admin_url( $pagenow . $qs );
 			}
 		}
 
-		wp_redirect( $url );
+		wp_safe_redirect( $url );
 		exit();
 	}
 
@@ -102,9 +102,8 @@ class Router extends Instance {
 			self::$_action = false;
 			$this->verify_action();
 			if ( self::$_action ) {
-				defined( 'debug' ) && debug( 'do_login action verified: ' . var_export( self::$_action, true ) );
+				defined( 'debug' ) && debug( 'do_login action verified: ' . var_export( self::$_action, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- debug output gated behind the debug constant.
 			}
-
 		}
 		return self::$_action;
 	}
@@ -115,11 +114,11 @@ class Router extends Instance {
 	 * @since  1.4
 	 */
 	private function verify_action() {
-		if ( empty( $_REQUEST[ Router::ACTION ] ) ) {
+		if ( empty( $_REQUEST[ self::ACTION ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() below.
 			return;
 		}
 
-		$action = $_REQUEST[ Router::ACTION ];
+		$action = sanitize_text_field( wp_unslash( $_REQUEST[ self::ACTION ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() below.
 
 		if ( ! $this->verify_nonce( $action ) ) {
 			return;
@@ -141,7 +140,6 @@ class Router extends Instance {
 				defined( 'debug' ) && debug( 'do_login match falied: ' . $action );
 				return;
 		}
-
 	}
 
 	/**
@@ -150,11 +148,11 @@ class Router extends Instance {
 	 * @since  1.4
 	 */
 	private function verify_nonce( $action ) {
-		if ( ! isset( $_REQUEST[ Router::NONCE ] ) ) {
+		if ( ! isset( $_REQUEST[ self::NONCE ] ) ) {
 			return false;
 		}
 
-		if (! wp_verify_nonce( $_REQUEST[ Router::NONCE ], $action )) {
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST[ self::NONCE ] ) ), $action ) ) {
 			return false;
 		}
 
@@ -168,14 +166,13 @@ class Router extends Instance {
 	 * @access public
 	 */
 	public static function verify_type() {
-		if ( empty( $_REQUEST[ self::TYPE ] ) ) {
-			defined( 'debug' ) && debug( 'no type', 2 ) ;
-			return false ;
+		if ( empty( $_REQUEST[ self::TYPE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
+			defined( 'debug' ) && debug( 'no type', 2 );
+			return false;
 		}
 
-		defined( 'debug' ) && debug( 'parsed type: ' . $_REQUEST[ self::TYPE ], 2 ) ;
+		defined( 'debug' ) && debug( 'parsed type: ' . sanitize_text_field( wp_unslash( $_REQUEST[ self::TYPE ] ) ), 2 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 
-		return $_REQUEST[ self::TYPE ] ;
+		return sanitize_text_field( wp_unslash( $_REQUEST[ self::TYPE ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 	}
-
 }

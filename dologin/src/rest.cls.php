@@ -8,19 +8,18 @@
 
 namespace dologin;
 
-defined('WPINC') || exit;
+defined( 'WPINC' ) || exit;
 
-class REST extends Instance
-{
+class REST extends Instance {
+
 	/**
 	 * Init
 	 *
 	 * @since  1.0
 	 * @access public
 	 */
-	public function init()
-	{
-		add_action('rest_api_init', array($this, 'rest_api_init'));
+	public function init() {
+		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 	}
 
 	/**
@@ -29,74 +28,84 @@ class REST extends Instance
 	 * @since  1.0
 	 * @access public
 	 */
-	public function rest_api_init()
-	{
-		register_rest_route('dologin/v1', '/myip', array(
-			'methods' => 'GET',
-			'callback' => __CLASS__ . '::geoip',
-			'permission_callback'	 => function () {
-				return current_user_can('manage_network_options') || current_user_can('manage_options');
-			},
-		));
+	public function rest_api_init() {
+		register_rest_route(
+			'dologin/v1',
+			'/myip',
+			array(
+				'methods'             => 'GET',
+				'callback'            => __CLASS__ . '::geoip',
+				'permission_callback' => function () {
+					return current_user_can( 'manage_network_options' ) || current_user_can( 'manage_options' );
+				},
+			)
+		);
 
-		register_rest_route('dologin/v1', '/2fa', array(
-			'methods' => 'POST',
-			'callback' => array($this, 'twofa'),
-			'permission_callback'	=> '__return_true',
-		));
+		register_rest_route(
+			'dologin/v1',
+			'/2fa',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'twofa' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 
-		register_rest_route('dologin/v1', '/sms', array(
-			'methods' => 'POST',
-			'callback' => array($this, 'sms'),
-			'permission_callback'	=> '__return_true',
-		));
+		register_rest_route(
+			'dologin/v1',
+			'/sms',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'sms' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 
-		register_rest_route('dologin/v1', '/test_sms', array(
-			'methods' => 'POST',
-			'callback' => array($this, 'test_sms'),
-			'permission_callback'	 => function () {
-				return current_user_can('manage_network_options') || current_user_can('manage_options');
-			},
-		));
+		register_rest_route(
+			'dologin/v1',
+			'/test_sms',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'test_sms' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_network_options' ) || current_user_can( 'manage_options' );
+				},
+			)
+		);
 	}
 
 	/**
 	 * Get GeoIP info
 	 */
-	public static function geoip()
-	{
+	public static function geoip() {
 		return IP::geo();
 	}
 
 	/**
 	 * Check 2fa
 	 */
-	public function twofa()
-	{
-		return $this->cls('TwoFA')->check();
+	public function twofa() {
+		return $this->cls( 'TwoFA' )->check();
 	}
 
 	/**
 	 * Send SMS
 	 */
-	public function sms()
-	{
-		return $this->cls('SMS')->send();
+	public function sms() {
+		return $this->cls( 'SMS' )->send();
 	}
 
 	/**
 	 * Send test SMS
 	 */
-	public function test_sms()
-	{
-		return $this->cls('SMS')->test_send();
+	public function test_sms() {
+		return $this->cls( 'SMS' )->test_send();
 	}
 
 	/**
 	 * Return content
 	 */
-	public static function ok($data)
-	{
+	public static function ok( $data ) {
 		$data['_res'] = 'ok';
 		return $data;
 	}
@@ -104,9 +113,11 @@ class REST extends Instance
 	/**
 	 * Return error
 	 */
-	public static function err($msg)
-	{
-		defined('debug') && debug('❌ [err] ' . $msg);
-		return array('_res' => 'err', '_msg' => $msg);
+	public static function err( $msg ) {
+		defined( 'debug' ) && debug( '❌ [err] ' . $msg );
+		return array(
+			'_res' => 'err',
+			'_msg' => $msg,
+		);
 	}
 }

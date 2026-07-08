@@ -2,9 +2,10 @@
 /**
  * The abstract instance
  *
- * @since      	1.0
+ * @since       1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 abstract class Instance {
@@ -12,6 +13,7 @@ abstract class Instance {
 
 	/**
 	 * Load an instance or create it if not existed
+	 *
 	 * @since  3.0
 	 */
 	public static function cls( $cls = false ) {
@@ -32,7 +34,7 @@ abstract class Instance {
 	 * Get called class short name
 	 */
 	public static function ori_cls() {
-		$cls = new \ReflectionClass( get_called_class() );
+		$cls       = new \ReflectionClass( get_called_class() );
 		$shortname = $cls->getShortName();
 		$namespace = str_replace( __NAMESPACE__ . '\\', '', $cls->getNamespaceName() . '\\' );
 		if ( $namespace ) { // the left namespace after dropped root namespace

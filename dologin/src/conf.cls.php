@@ -5,30 +5,30 @@
  * @since 1.0
  */
 namespace dologin;
+
 defined( 'WPINC' ) || exit;
 
 class Conf extends Instance {
 	private $_options = array();
 
 	public static $_default_options = array(
-		'_ver'				=> '',
-		'_pk'				=> '',
-		'_sk'				=> '',
-		'max_retries'		=> 6,
-		'duration'			=> 10,
-		'auto_upgrade'		=> true,
-		'gdpr'				=> false,
-		'2fa'				=> false,
-		'2fa_force'			=> false,
-		'sms'				=> false,
-		'sms_force'			=> false,
-		'cf'				=> false,
-		'cf_pub_key'		=> '',
-		'cf_priv_key'		=> '',
-		'recapt_register' 	=> false,
-		'recapt_forget' 	=> false,
-		'whitelist'			=> array(),
-		'blacklist'			=> array(),
+		'_ver'            => '',
+		'_pk'             => '',
+		'_sk'             => '',
+		'max_retries'     => 6,
+		'duration'        => 10,
+		'gdpr'            => false,
+		'2fa'             => false,
+		'2fa_force'       => false,
+		'sms'             => false,
+		'sms_force'       => false,
+		'cf'              => false,
+		'cf_pub_key'      => '',
+		'cf_priv_key'     => '',
+		'recapt_register' => false,
+		'recapt_forget'   => false,
+		'whitelist'       => array(),
+		'blacklist'       => array(),
 	);
 
 	/**
@@ -47,13 +47,12 @@ class Conf extends Instance {
 		$this->_options = $options;
 
 		// Update options if not exists
-		! defined( 'DOLOGIN_CUR_V' ) && define( 'DOLOGIN_CUR_V', $this->_options[ '_ver' ] ) ;
+		! defined( 'DOLOGIN_CUR_V' ) && define( 'DOLOGIN_CUR_V', $this->_options['_ver'] );
 
 		if ( ! DOLOGIN_CUR_V || DOLOGIN_CUR_V != Core::VER ) {
 			if ( ! DOLOGIN_CUR_V ) {
 				Util::version_check( 'new' );
-			}
-			else {
+			} else {
 				// DB update
 				$this->cls( 'Data' )->conf_upgrade();
 			}
@@ -136,14 +135,12 @@ class Conf extends Instance {
 		$default_v = self::$_default_options[ $id ];
 		if ( is_bool( $default_v ) ) {
 			$data = (bool) $data;
-		}
-		elseif ( is_array( $default_v ) ) {
+		} elseif ( is_array( $default_v ) ) {
 			if ( ! is_array( $data ) ) {
 				$data = explode( "\n", $data );
 				$data = array_filter( $data );
 			}
-		}
-		elseif ( ! is_string( $default_v ) ) {
+		} elseif ( ! is_string( $default_v ) ) {
 			$data = (int) $data;
 		}
 
@@ -151,7 +148,5 @@ class Conf extends Instance {
 
 		// Change current setting
 		self::cls()->_options[ $id ] = $data;
-
 	}
-
 }

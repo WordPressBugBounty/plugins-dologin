@@ -1,13 +1,13 @@
 === DoLogin Security ===
 Contributors: WPDO
-Tags: Login security, 2FA login, Easy login, Cloudflare Turnstile reCAPTCHA, GeoLocation login limit, limit login attempts, passwordless login
-Requires at least: 4.0
-Tested up to: 6.8.1
-Stable tag: 4.3
+Tags: Login security, 2FA login, reCAPTCHA, limit login attempts, passwordless login
+Requires at least: 4.4
+Tested up to: 7.0
+Stable tag: 4.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-Easy Login. 2FA login. Passwordless login. Cloudflare Turnstile reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce.
+Easy Login. 2FA login. Passwordless login. reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Whitelist and Blacklist.
 
 == Description ==
 
@@ -74,6 +74,14 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.4 - Jul 6 2026 =
+* 🐞 Security: Fixed an authentication bypass via insufficient randomness in passwordless and site-connection login tokens (CVE-2026-14495). Login tokens and SMS codes are now generated with a cryptographically secure random source.
+* 🐞 Security: Fixed an unauthenticated stored XSS in the Login Attempts log, dashboard widget, and Site Connections tables. All output is now escaped.
+* 🐞 Security: The per-IP failure limit is now enforced on the passwordless and easy-login endpoints; token comparison is constant-time.
+* 🐞 Security: Enabled TLS verification on outbound API calls, validated the site-connection URL (SSRF), switched to safe redirects, and added a no-referrer policy on the passwordless confirmation page to prevent token leakage.
+* 🐞 Cloudflare Turnstile no longer blocks XML-RPC authentication, which cannot present a captcha and is already covered by the login attempt limiter.
+* Declared WooCommerce HPOS (High-Performance Order Storage) compatibility.
 
 = 4.3 - Jun 11 2025 =
 * Generating passwordless link will redirect to the corresponding tab now.

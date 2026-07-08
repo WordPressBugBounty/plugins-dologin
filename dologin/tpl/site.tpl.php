@@ -1,37 +1,41 @@
 <?php
+/**
+ * Site connections template.
+ *
+ * @package dologin
+ */
+
 namespace dologin;
 
 defined( 'WPINC' ) || exit;
 
-$__gui = $this->cls('GUI');
-
 ?>
-<form method="post" action="<?php menu_page_url('dologin'); ?>" class="dologin-relative" id="token_form">
-	<input type="hidden" name="<?php echo Router::ACTION; ?>" value="<?php echo Router::ACTION_SITE; ?>" />
-	<input type="hidden" name="<?php echo Router::TYPE; ?>" value="<?php echo Site::TYPE_CONNECT; ?>" />
-	<?php wp_nonce_field('site', Router::NONCE); ?>
+<form method="post" action="<?php echo esc_url( menu_page_url( 'dologin', false ) ); ?>" class="dologin-relative" id="token_form">
+	<input type="hidden" name="<?php echo esc_attr( Router::ACTION ); ?>" value="<?php echo esc_attr( Router::ACTION_SITE ); ?>" />
+	<input type="hidden" name="<?php echo esc_attr( Router::TYPE ); ?>" value="<?php echo esc_attr( Site::TYPE_CONNECT ); ?>" />
+	<?php wp_nonce_field( 'site', Router::NONCE ); ?>
 
-	<h3 class="dologin-title-short"><?php esc_html_e('Add Child Site Connection', 'dologin'); ?></h3>
+	<h3 class="dologin-title-short"><?php esc_html_e( 'Add Child Site Connection', 'dologin' ); ?></h3>
 
 	<table class="wp-list-table striped dologin-table">
 		<tbody>
 			<tr>
-				<th><?php esc_html_e('Token', 'dologin'); ?></th>
+				<th><?php esc_html_e( 'Token', 'dologin' ); ?></th>
 				<td>
 					<div class="dologin-textarea-recommended">
 						<div>
 							<textarea name='token' rows='3' cols='80' id="token_textarea"></textarea>
 						</div>
 						<div>
-							<?php submit_button(esc_html__('Add Site', 'dologin'), 'dologin-btn-success', 'dologin-submit'); ?>
+							<?php submit_button( esc_html__( 'Add Site', 'dologin' ), 'dologin-btn-success', 'dologin-submit' ); ?>
 						</div>
 					</div>
 					<div class="dologin-desc">
-						<?php esc_html_e("Add the child site's token you want to connect to.", 'dologin'); ?>
-						<?php esc_html_e("This will allow you to login to other sites by one click in future.", 'dologin'); ?><br>
-						<?php if (Conf::val('_pk')) : ?>
-							<?php esc_html_e('Your root public key is:', 'dologin'); ?>
-							<code><?php echo Conf::val('_pk'); ?></code>
+						<?php esc_html_e( "Add the child site's token you want to connect to.", 'dologin' ); ?>
+						<?php esc_html_e( 'This will allow you to login to other sites by one click in future.', 'dologin' ); ?><br>
+						<?php if ( Conf::val( '_pk' ) ) : ?>
+							<?php esc_html_e( 'Your root public key is:', 'dologin' ); ?>
+							<code><?php echo esc_html( Conf::val( '_pk' ) ); ?></code>
 						<?php endif; ?>
 					</div>
 				</td>
@@ -39,12 +43,12 @@ $__gui = $this->cls('GUI');
 		</tbody>
 	</table>
 	<script>
-  document.getElementById('token_textarea').addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' && !event.shiftKey) { // Submit on Enter, allow Shift+Enter for new line
-      event.preventDefault(); // Prevent new line in textarea
-      document.getElementById('token_form').submit(); // Submit the form
-    }
-  });
+	document.getElementById('token_textarea').addEventListener('keydown', function(event) {
+	if (event.key === 'Enter' && !event.shiftKey) { // Submit on Enter, allow Shift+Enter for new line
+		event.preventDefault(); // Prevent new line in textarea
+		document.getElementById('token_form').submit(); // Submit the form
+	}
+	});
 </script>
 </form>
 
@@ -73,56 +77,61 @@ $__gui = $this->cls('GUI');
 	</tr>
 	</thead>
 	<tbody>
-	<?php foreach ( $this->sites() as $v ) : ?>
+	<?php foreach ( $this->sites() as $dologin_v ) : ?>
 		<tr>
-			<td><?php echo $v->id; ?></td>
-			<?php if ($v->url && $v->pk) : ?>
+			<td><?php echo (int) $dologin_v->id; ?></td>
+			<?php if ( $dologin_v->url && $dologin_v->pk ) : ?>
 				<td>
-					<?php if ($v->easy_login) : ?>
-					<a href="<?php echo $v->easy_login; ?>" target="_blank" class="button dologin-btn-tiny dologin-btn-success" rel="noopener"><?php esc_html_e( 'Easy Login', 'dologin' ); ?></a></td>
+					<?php if ( $dologin_v->easy_login ) : ?>
+					<a href="<?php echo esc_url( $dologin_v->easy_login ); ?>" target="_blank" class="button dologin-btn-tiny dologin-btn-success" rel="noopener"><?php esc_html_e( 'Easy Login', 'dologin' ); ?></a></td>
 					<?php else : ?>
-						<?php esc_html_e('Root Site'); ?>
+						<?php esc_html_e( 'Root Site', 'dologin' ); ?>
 					<?php endif; ?>
-				<td><?php echo $v->title; ?></td>
-				<td><?php echo $v->url; ?></td>
-				<td><code><?php echo $v->pk; ?></code></td>
-			<?php elseif ($v->_valid) : ?>
+				<td><?php echo esc_html( $dologin_v->title ); ?></td>
+				<td><?php echo esc_url( $dologin_v->url ); ?></td>
+				<td><code><?php echo esc_html( $dologin_v->pk ); ?></code></td>
+			<?php elseif ( $dologin_v->_valid ) : ?>
 				<td colspan="4">
 					<div class="dologin-row-flex">
-						<?php esc_html_e('Token:', 'dologin'); ?>
-						<code class="dologin-p10 dologin-code-break dologin_pswd_link dologin_tt dologin_tt--success" data-title="<?php esc_html_e( 'Click to copy', 'dologin' ); ?>"><?php echo $v->token; ?></code>
+						<?php esc_html_e( 'Token:', 'dologin' ); ?>
+						<code class="dologin-p10 dologin-code-break dologin_pswd_link dologin_tt dologin_tt--success" data-title="<?php esc_attr_e( 'Click to copy', 'dologin' ); ?>"><?php echo esc_html( $dologin_v->token ); ?></code>
 					</div>
 					<div class="dologin-success dologin-mt5">
-						<?php printf(
-							esc_html__( 'Copy to your root WordPress site "DoLogin -> %s" tab to enable easy login to this site.', 'dologin' ),
-							'<strong>'.esc_html__( 'Site Connections', 'dologin' ).'</strong>'
-						); ?>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: the "Site Connections" tab name. */
+								__( 'Copy to your root WordPress site "DoLogin -> %s" tab to enable easy login to this site.', 'dologin' ),
+								'<strong>' . esc_html__( 'Site Connections', 'dologin' ) . '</strong>'
+							)
+						);
+						?>
 					</div>
 					<p class="dologin-success">
-						<?php esc_html_e('Token valid for 1 hour.', 'dologin'); ?>
+						<?php esc_html_e( 'Token valid for 1 hour.', 'dologin' ); ?>
 					</p>
 				</td>
 			<?php else : ?>
 				<td colspan="4" class="dologin-danger">
-					<?php esc_html_e('Token expired', 'dologin'); ?>
+					<?php esc_html_e( 'Token expired', 'dologin' ); ?>
 				</td>
 			<?php endif; ?>
-			<td><?php echo Util::readable_time( $v->dateline ); ?></td>
+			<td><?php echo esc_html( Util::readable_time( $dologin_v->dateline ) ); ?></td>
 			<td>
-				<div class="dologin-warn"><?php echo strtoupper( esc_html( implode( ', ', $v->roles ) ) ); ?></div>
-				<div><?php echo $v->username; ?></div>
+				<div class="dologin-warn"><?php echo esc_html( strtoupper( implode( ', ', $dologin_v->roles ) ) ); ?></div>
+				<div><?php echo esc_html( $dologin_v->username ); ?></div>
 			</td>
-			<td><?php echo $v->last_used_at ? Util::readable_time( $v->last_used_at ) : '-'; ?></td>
+			<td><?php echo $dologin_v->last_used_at ? esc_html( Util::readable_time( $dologin_v->last_used_at ) ) : '-'; ?></td>
 			<td>
-				<a href="<?php echo $v->_lock_link; ?>"><?php echo $v->active ? '<span class="dashicons dashicons-unlock"></span>' : '<span class="dashicons dashicons-lock"></span>'; ?></a>
+				<a href="<?php echo esc_url( $dologin_v->_lock_link ); ?>"><?php echo $dologin_v->active ? '<span class="dashicons dashicons-unlock"></span>' : '<span class="dashicons dashicons-lock"></span>'; ?></a>
 				<?php
-				if ( $v->active == 1 ) :
-					echo '<font color="green">' . __( 'Active', 'dologin') . '</font>';
+				if ( 1 === (int) $dologin_v->active ) :
+					echo '<span style="color:green;">' . esc_html__( 'Active', 'dologin' ) . '</span>';
 				else :
-					echo '<font color="red">' . __( 'Disabled', 'dologin') . '</font>';
+					echo '<span style="color:red;">' . esc_html__( 'Disabled', 'dologin' ) . '</span>';
 				endif;
 				?>
-				<a href="<?php echo $v->_del_link; ?>" class="dologin-right"><span class="dashicons dashicons-dismiss"></span></a>
+				<a href="<?php echo esc_url( $dologin_v->_del_link ); ?>" class="dologin-right"><span class="dashicons dashicons-dismiss"></span></a>
 			</td>
 		</tr>
 	<?php endforeach; ?>
