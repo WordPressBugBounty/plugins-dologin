@@ -1,549 +1,1442 @@
-# Copyright (C) 2020 DoLogin Security
-# This file is distributed under the same license as the DoLogin Security package.
+# Copyright (C) 2026 WPDO
+# This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: DoLogin Security 2.9.3\n"
+"Project-Id-Version: DoLogin Security 4.7.7\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/dologin\n"
-"POT-Creation-Date: 2020-09-22 15:03:53+00:00\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2020-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"POT-Creation-Date: 2026-07-22T22:35:49+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: dologin\n"
 
-#: src/admin.cls.php:67 src/admin.cls.php:74 src/gui.cls.php:136
-msgid "Dologin Security Phone"
+#. Plugin Name of the plugin
+#: dologin.php
+#: src/lang.cls.php:121
+#: tpl/entry.tpl.php:21
+msgid "DoLogin Security"
 msgstr ""
 
-#: src/admin.cls.php:87
+#. Description of the plugin
+#: dologin.php
+msgid "Passwordless login. 2FA verification login. GeoLocation (Continent/Country/City) or IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce. Login attempt limit. CLI supported for generating passwordless login."
+msgstr ""
+
+#. Author of the plugin
+#: dologin.php
+msgid "WPDO"
+msgstr ""
+
+#: src/admin.cls.php:32
+msgid "DoLogin Security Overview"
+msgstr ""
+
+#: src/admin.cls.php:89
+msgid "Dologin Operations"
+msgstr ""
+
+#: src/admin.cls.php:92
+msgid "Dologin 2FA"
+msgstr ""
+
+#: src/admin.cls.php:99
+msgid "Create Site Token"
+msgstr ""
+
+#: src/admin.cls.php:100
 msgid "Generate Login Link"
 msgstr ""
 
-#: src/admin.cls.php:102 tpl/entry.tpl.php:7
+#: src/admin.cls.php:120
+#: tpl/entry.tpl.php:14
 msgid "Settings"
 msgstr ""
 
-#: src/admin.cls.php:142
+#: src/admin.cls.php:159
+msgid "KeyLockr App Tag is required."
+msgstr ""
+
+#: src/admin.cls.php:163
+msgid "KeyLockr SSO was not enabled."
+msgstr ""
+
+#: src/admin.cls.php:168
+msgid "Force KeyLockr SSO was not enabled. Link and verify the current administrator with the saved App Tag and site keys first."
+msgstr ""
+
+#: src/admin.cls.php:178
 msgid "Options saved successfully!"
 msgstr ""
 
-#: src/auth.cls.php:391
+#: src/admin.cls.php:231
+#: src/admin.cls.php:249
+msgid "Deleted user"
+msgstr ""
+
+#: src/auth.cls.php:278
+msgid "KeyLockr SSO login is required."
+msgstr ""
+
+#. translators: %d: number of cleared records.
+#: src/auth.cls.php:428
 msgid "Cleared %d record(s) successfully!"
 msgstr ""
 
 #: src/cli.cls.php:32
+#: tpl/pswdless.tpl.php:52
 msgid "Expired"
 msgstr ""
 
-#: src/cli.cls.php:55
+#: src/cli.cls.php:54
 msgid "No related user."
 msgstr ""
 
-#: src/cli.cls.php:77
+#: src/cli.cls.php:75
 msgid "No ID to delete."
 msgstr ""
 
-#: src/f.cls.php:104
+#. translators: %s: Folder path.
+#: src/f.cls.php:105
 msgid "Folder does not exist: %s"
 msgstr ""
 
-#: src/f.cls.php:111
+#. translators: 1: Folder path, 2: Error message.
+#: src/f.cls.php:112
 msgid "Can not create folder: %1$s. Error: %2$s"
 msgstr ""
 
-#: src/f.cls.php:117
+#. translators: %s: Folder path.
+#: src/f.cls.php:119
 msgid "Folder is not writable: %s."
 msgstr ""
 
-#: src/f.cls.php:123 src/f.cls.php:127
+#. translators: %s: File path.
+#: src/f.cls.php:125
+#: src/f.cls.php:129
 msgid "File %s is not writable."
 msgstr ""
 
-#: src/f.cls.php:134
+#. translators: %s: File path.
+#: src/f.cls.php:137
 msgid "Failed to write to %s."
 msgstr ""
 
-#: src/gui.cls.php:116
+#: src/gui.cls.php:101
+msgid "Looking up this IP address..."
+msgstr ""
+
+#: src/gui.cls.php:102
+msgid "Failed to look up this IP address."
+msgstr ""
+
+#: src/gui.cls.php:103
+msgid "Reset the KeyLockr site keys? Future scans will create a new KeyLockr connection. Linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed."
+msgstr ""
+
+#: src/gui.cls.php:104
+msgid "Resetting KeyLockr site keys..."
+msgstr ""
+
+#: src/gui.cls.php:105
+#: src/klsso-keys.cls.php:46
+msgid "Failed to reset KeyLockr site keys."
+msgstr ""
+
+#: src/gui.cls.php:134
+msgid "Connecting to KeyLockr..."
+msgstr ""
+
+#: src/gui.cls.php:135
+msgid "Get New QR"
+msgstr ""
+
+#: src/gui.cls.php:136
+msgid "KeyLockr SSO failed."
+msgstr ""
+
+#: src/gui.cls.php:137
+msgid "KeyLockr SSO verified."
+msgstr ""
+
+#: src/gui.cls.php:138
+msgid "Unlink KeyLockr SSO from this WordPress account?"
+msgstr ""
+
+#: src/gui.cls.php:160
 msgid "Dynamic Code"
 msgstr ""
 
-#: src/gui.cls.php:244
+#: src/gui.cls.php:282
 msgid "OFF"
 msgstr ""
 
-#: src/gui.cls.php:245 src/lang.cls.php:60
+#: src/gui.cls.php:283
+#: src/lang.cls.php:71
 msgid "ON"
 msgstr ""
 
-#: src/lang.cls.php:32
+#: src/klsso-keys.cls.php:31
+msgid "You are not allowed to reset KeyLockr site keys."
+msgstr ""
+
+#: src/klsso-keys.cls.php:34
+#: tpl/setting.tpl.php:138
+msgid "Disable Force KeyLockr SSO before resetting the site keys."
+msgstr ""
+
+#: src/klsso-keys.cls.php:53
+msgid "KeyLockr site keys were reset. Verify linked accounts again or complete a successful SSO login."
+msgstr ""
+
+#: src/klsso-keys.cls.php:54
+#: src/klsso-ui.cls.php:120
+msgid "This account has not been verified with the current KeyLockr connection identity. Verify the connection before relying on it."
+msgstr ""
+
+#: src/klsso-keys.cls.php:64
+#: src/klsso-keys.cls.php:95
+#: src/klsso.cls.php:81
+#: src/site.cls.php:373
+msgid "Sodium cryptography support is required."
+msgstr ""
+
+#: src/klsso-keys.cls.php:87
+msgid "Failed to store KeyLockr site keys."
+msgstr ""
+
+#: src/klsso-keys.cls.php:103
+msgid "Failed to generate KeyLockr site keys."
+msgstr ""
+
+#: src/klsso-keys.cls.php:107
+msgid "Generated KeyLockr site keys are invalid."
+msgstr ""
+
+#: src/klsso-keys.cls.php:115
+msgid "KeyLockr site keys are invalid."
+msgstr ""
+
+#: src/klsso-keys.cls.php:128
+msgid "Failed to protect KeyLockr site keys."
+msgstr ""
+
+#: src/klsso-keys.cls.php:139
+#: src/klsso-keys.cls.php:160
+msgid "Stored KeyLockr site keys are invalid. Reset them in settings."
+msgstr ""
+
+#: src/klsso-keys.cls.php:144
+msgid "Stored KeyLockr site keys cannot be opened. Reset them in settings."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:20
+msgid "KeyLockr did not return app data filekey."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:25
+#: src/klsso-protocol.cls.php:35
+#: src/klsso.cls.php:634
+msgid "Invalid KeyLockr app data filekey."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:38
+msgid "KeyLockr app data filekey is missing sender public key."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:43
+msgid "Invalid KeyLockr SSO session key."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:48
+msgid "Failed to decrypt KeyLockr app data filekey."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:87
+msgid "KeyLockr app data write could not be verified. Unlock KeyLockr on your phone and try linking again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:94
+msgid "KeyLockr app data changed repeatedly while linking. Please scan again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:101
+msgid "KeyLockr app data was not found. This usually means App Data Storage is disabled for this service. Open KeyLockr Developer, edit this App Tag, enable App Data Storage, and scan again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:109
+msgid "KeyLockr returned an invalid app data version."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:120
+msgid "KeyLockr App Data Storage is not approved for this App Tag. Enable it in KeyLockr Developer and try again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:123
+msgid "KeyLockr could not resolve this App Tag. Check the effective App Tag in KeyLockr Developer and try again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:125
+msgid "KeyLockr handshake failed: %s"
+msgstr ""
+
+#: src/klsso-protocol.cls.php:161
+msgid "KeyLockr app data changed while linking. Reading the latest version before retrying..."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:194
+msgid "KeyLockr app_verify returned an invalid response status."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:199
+msgid "Failed to decode KeyLockr app_verify response."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:203
+msgid "KeyLockr app_verify failed: %s"
+msgstr ""
+
+#: src/klsso-protocol.cls.php:215
+#: src/klsso-protocol.cls.php:223
+#: src/klsso-protocol.cls.php:249
+#: src/klsso-protocol.cls.php:259
+#: src/klsso-protocol.cls.php:264
+msgid "Invalid KeyLockr KPS frame."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:227
+msgid "Invalid KeyLockr KPS signature."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:232
+msgid "Invalid KeyLockr KPS hash."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:239
+msgid "Invalid KeyLockr KPS encryption data."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:244
+msgid "Failed to decrypt KeyLockr KPS frame."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:255
+msgid "Invalid or expired KeyLockr KPS response."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:324
+msgid "Invalid KeyLockr KPS raw data."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:370
+msgid "KeyLockr clock request returned an invalid status."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:376
+msgid "KeyLockr returned invalid clock data."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:381
+msgid "This server clock is out of sync with KeyLockr. Synchronize the server time and try again."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:489
+msgid "KeyLockr server key request returned an invalid status."
+msgstr ""
+
+#: src/klsso-protocol.cls.php:495
+msgid "Invalid KeyLockr server public keys."
+msgstr ""
+
+#: src/klsso-repair.cls.php:28
+msgid "KeyLockr returned App Data for the Safe linked to this WordPress account, but its DoLogin binding hash does not match the locally stored hash. The App Data may be stale, replaced, or left from an older connection. Use Repair Connection and scan the same linked Safe again. DoLogin will rewrite the account binding hash and read it back before restoring the connection."
+msgstr ""
+
+#: src/klsso-repair.cls.php:29
+msgid "KeyLockr allowed App Data access, but the current App Tag and site connection do not contain the DoLogin binding hash. Allowing data access only grants permission; it does not create the WordPress link or write this hash. This can happen after changing the App Tag, resetting the site connection keys, migrating an older connection, or removing KeyLockr App Data. Use Repair Connection and scan the Safe already linked to this WordPress account. DoLogin will write the account binding hash and read it back before restoring the connection."
+msgstr ""
+
+#: src/klsso-repair.cls.php:43
+msgid "Repair Connection must use the KeyLockr Safe already linked to this WordPress account."
+msgstr ""
+
+#: src/klsso-repair.cls.php:61
+msgid "KeyLockr SSO connection repaired successfully."
+msgstr ""
+
+#: src/klsso-state.cls.php:232
+msgid "Unexpected KeyLockr SSO message sequence."
+msgstr ""
+
+#: src/klsso-state.cls.php:238
+#: src/klsso-state.cls.php:245
+msgid "Invalid KeyLockr SSO session phase."
+msgstr ""
+
+#: src/klsso-ui.cls.php:19
+msgid "DoLogin Security Login"
+msgstr ""
+
+#: src/klsso-ui.cls.php:20
+#: src/klsso-ui.cls.php:141
+#: src/klsso-ui.cls.php:145
+msgid "KeyLockr SSO"
+msgstr ""
+
+#: src/klsso-ui.cls.php:22
+msgid "Learn more about KeyLockr at"
+msgstr ""
+
+#: src/klsso-ui.cls.php:37
+msgid "KeyLockr SSO is unavailable. Forced login remains active, and other login methods are still blocked."
+msgstr ""
+
+#: src/klsso-ui.cls.php:46
+#: src/klsso-ui.cls.php:60
+msgid "KeyLockr SSO QR code"
+msgstr ""
+
+#: src/klsso-ui.cls.php:47
+msgid "Start KeyLockr verification when you are ready. A QR code and secure connection are created only after you continue."
+msgstr ""
+
+#: src/klsso-ui.cls.php:48
+msgid "Start KeyLockr Login"
+msgstr ""
+
+#: src/klsso-ui.cls.php:67
+msgid "Start Pairing"
+msgstr ""
+
+#: src/klsso-ui.cls.php:70
+msgid "Repair Connection"
+msgstr ""
+
+#: src/klsso-ui.cls.php:83
+msgid "Enter and save the KeyLockr App Tag before linking an account."
+msgstr ""
+
+#: src/klsso-ui.cls.php:99
+msgid "Current account is linked to KeyLockr SSO."
+msgstr ""
+
+#: src/klsso-ui.cls.php:106
+msgid "Relink Connection"
+msgstr ""
+
+#: src/klsso-ui.cls.php:108
+msgid "Verify Connection"
+msgstr ""
+
+#: src/klsso-ui.cls.php:113
+msgid "Unlink KeyLockr"
+msgstr ""
+
+#: src/klsso-ui.cls.php:118
+msgid "The KeyLockr App Tag changed. Relink this account to the current App Tag before relying on it."
+msgstr ""
+
+#: src/klsso-ui.cls.php:123
+#: src/klsso.cls.php:238
+msgid "Disable Force KeyLockr SSO before unlinking this account."
+msgstr ""
+
+#: src/klsso-ui.cls.php:127
+msgid "Current account is not linked to KeyLockr SSO."
+msgstr ""
+
+#: src/klsso-ui.cls.php:150
+msgid "Select Start Pairing, then scan the QR code with KeyLockr; no KeyLockr ID needs to be entered manually."
+msgstr ""
+
+#: src/klsso-ui.cls.php:153
+msgid "Ask an administrator to configure the KeyLockr App Tag before linking an account."
+msgstr ""
+
+#: src/klsso.cls.php:84
+msgid "Bundled QR code generator is missing."
+msgstr ""
+
+#: src/klsso.cls.php:235
+msgid "You need to login before unlinking KeyLockr SSO."
+msgstr ""
+
+#: src/klsso.cls.php:257
+msgid "KeyLockr SSO unlinked successfully."
+msgstr ""
+
+#: src/klsso.cls.php:269
+msgid "Invalid KeyLockr SSO mode."
+msgstr ""
+
+#: src/klsso.cls.php:273
+msgid "KeyLockr SSO is not configured."
+msgstr ""
+
+#: src/klsso.cls.php:277
+msgid "KeyLockr App Tag is not configured."
+msgstr ""
+
+#: src/klsso.cls.php:287
+msgid "You need to login before verifying the KeyLockr connection."
+msgstr ""
+
+#: src/klsso.cls.php:288
+msgid "You need to login before linking KeyLockr SSO."
+msgstr ""
+
+#: src/klsso.cls.php:292
+msgid "Link this WordPress account with KeyLockr SSO before verifying the connection."
+msgstr ""
+
+#: src/klsso.cls.php:297
+#: src/klsso.cls.php:841
+#: src/twofa.cls.php:271
+msgid "This IP is not allowed to login."
+msgstr ""
+
+#: src/klsso.cls.php:305
+msgid "Too many KeyLockr SSO session requests. Please try later."
+msgstr ""
+
+#: src/klsso.cls.php:322
+msgid "Failed to create KeyLockr SSO session."
+msgstr ""
+
+#: src/klsso.cls.php:356
+msgid "KeyLockr handshake returned an invalid response status."
+msgstr ""
+
+#: src/klsso.cls.php:362
+msgid "Failed to decode KeyLockr handshake response."
+msgstr ""
+
+#: src/klsso.cls.php:365
+msgid "KeyLockr handshake failed."
+msgstr ""
+
+#: src/klsso.cls.php:370
+msgid "KeyLockr handshake did not return tmp_id."
+msgstr ""
+
+#: src/klsso.cls.php:387
+#: src/klsso.cls.php:490
+msgid "Failed to store KeyLockr SSO session."
+msgstr ""
+
+#: src/klsso.cls.php:408
+msgid "Too many KeyLockr SSO frame requests. Please try later."
+msgstr ""
+
+#: src/klsso.cls.php:411
+#: src/klsso.cls.php:431
+msgid "KeyLockr SSO session expired."
+msgstr ""
+
+#: src/klsso.cls.php:415
+msgid "KeyLockr SSO session is busy. Please retry."
+msgstr ""
+
+#: src/klsso.cls.php:435
+#: src/klsso.cls.php:804
+msgid "KeyLockr site keys changed. Start a new session."
+msgstr ""
+
+#: src/klsso.cls.php:439
+#: src/klsso.cls.php:807
+msgid "KeyLockr App Tag changed. Start a new session."
+msgstr ""
+
+#: src/klsso.cls.php:445
+msgid "KeyLockr SSO account session does not match current user."
+msgstr ""
+
+#: src/klsso.cls.php:451
+msgid "KeyLockr SSO frame limit exceeded."
+msgstr ""
+
+#: src/klsso.cls.php:459
+#: src/klsso.cls.php:482
+msgid "Invalid KeyLockr SSO frame."
+msgstr ""
+
+#: src/klsso.cls.php:465
+msgid "KeyLockr SSO frame was already processed."
+msgstr ""
+
+#: src/klsso.cls.php:501
+#: src/klsso.cls.php:521
+#: src/klsso.cls.php:526
+#: src/klsso.cls.php:536
+#: src/klsso.cls.php:549
+msgid "Invalid KeyLockr SSO response."
+msgstr ""
+
+#: src/klsso.cls.php:519
+msgid "KeyLockr returned an error: %s"
+msgstr ""
+
+#: src/klsso.cls.php:530
+msgid "Connected to KeyLockr. Waiting for authorization..."
+msgstr ""
+
+#: src/klsso.cls.php:545
+msgid "KeyLockr did not return SSO identity."
+msgstr ""
+
+#: src/klsso.cls.php:556
+msgid "KeyLockr returned unexpected SSO capabilities."
+msgstr ""
+
+#: src/klsso.cls.php:570
+msgid "KeyLockr SSO identity verification failed."
+msgstr ""
+
+#: src/klsso.cls.php:584
+msgid "KeyLockr authorized. Requesting app data verification..."
+msgstr ""
+
+#: src/klsso.cls.php:593
+msgid "Unlock KeyLockr on your phone and approve app data access."
+msgstr ""
+
+#: src/klsso.cls.php:597
+msgid "KeyLockr app data access was denied."
+msgstr ""
+
+#: src/klsso.cls.php:600
+msgid "Unexpected KeyLockr app data status."
+msgstr ""
+
+#: src/klsso.cls.php:624
+msgid "Reading KeyLockr app data..."
+msgstr ""
+
+#: src/klsso.cls.php:630
+msgid "KeyLockr app data filekey is missing."
+msgstr ""
+
+#: src/klsso.cls.php:667
+msgid "KeyLockr app data saved. Reading it back for verification..."
+msgstr ""
+
+#: src/klsso.cls.php:678
+msgid "Unexpected KeyLockr SSO message."
+msgstr ""
+
+#: src/klsso.cls.php:686
+msgid "KeyLockr app data key is missing."
+msgstr ""
+
+#: src/klsso.cls.php:694
+msgid "Failed to decrypt KeyLockr app data."
+msgstr ""
+
+#: src/klsso.cls.php:719
+msgid "Please link this WordPress account with KeyLockr SSO first."
+msgstr ""
+
+#: src/klsso.cls.php:763
+msgid "Writing KeyLockr app data verification hash..."
+msgstr ""
+
+#: src/klsso.cls.php:772
+#: src/klsso.cls.php:801
+msgid "KeyLockr SSO identity is not verified."
+msgstr ""
+
+#: src/klsso.cls.php:776
+msgid "WordPress user is not available for KeyLockr binding."
+msgstr ""
+
+#: src/klsso.cls.php:790
+msgid "This KeyLockr account is already linked to another WordPress user."
+msgstr ""
+
+#: src/klsso.cls.php:811
+msgid "KeyLockr app data hash is not verified."
+msgstr ""
+
+#: src/klsso.cls.php:814
+msgid "KeyLockr app data read-back is not verified."
+msgstr ""
+
+#: src/klsso.cls.php:824
+msgid "KeyLockr SSO verification does not match this WordPress account."
+msgstr ""
+
+#: src/klsso.cls.php:835
+msgid "KeyLockr SSO verification succeeded."
+msgstr ""
+
+#: src/klsso.cls.php:859
+msgid "KeyLockr SSO linked successfully."
+msgstr ""
+
+#: src/klsso.cls.php:873
+msgid "The KeyLockr account link is missing or ambiguous."
+msgstr ""
+
+#: src/klsso.cls.php:879
+msgid "KeyLockr app data hash does not match this WordPress account."
+msgstr ""
+
+#: src/klsso.cls.php:893
+msgid "Logged in with KeyLockr SSO."
+msgstr ""
+
+#. translators: %d: number of seconds to wait before retrying.
+#: src/lang.cls.php:35
 msgid "Please try after %ds."
 msgstr ""
 
-#: src/lang.cls.php:36
+#: src/lang.cls.php:39
 msgid "No Dologin Security phone number set under your profile."
 msgstr ""
 
-#: src/lang.cls.php:40
+#: src/lang.cls.php:43
 msgid "No phone number under this user profile."
 msgstr ""
 
-#: src/lang.cls.php:44
+#: src/lang.cls.php:47
+msgid "No 2FA set under this user profile."
+msgstr ""
+
+#: src/lang.cls.php:51
 msgid "Empty username/password."
 msgstr ""
 
-#: src/lang.cls.php:48
+#: src/lang.cls.php:55
+msgid "Invalid username/password."
+msgstr ""
+
+#: src/lang.cls.php:59
 msgid "Your IP is not in the whitelist."
 msgstr ""
 
-#: src/lang.cls.php:52
+#: src/lang.cls.php:63
 msgid "Your IP is in the blacklist."
 msgstr ""
 
-#: src/lang.cls.php:56
+#: src/lang.cls.php:67
 msgid "Too many failed login attempts. Please try later."
 msgstr ""
 
-#: src/lang.cls.php:64
+#. translators: %s: number of remaining login attempts.
+#: src/lang.cls.php:76
 msgid "%s attempt(s) remaining."
 msgstr ""
 
-#: src/lang.cls.php:68
+#: src/lang.cls.php:80
 msgid "Dynamic code is required."
 msgstr ""
 
-#: src/lang.cls.php:72
+#: src/lang.cls.php:84
 msgid "Dynamic code is not correct."
 msgstr ""
 
-#: src/lang.cls.php:76
+#: src/lang.cls.php:88
 msgid "Please check the reCAPTCHA box."
 msgstr ""
 
-#: src/lang.cls.php:81
+#: src/lang.cls.php:93
 msgid "The secret parameter is missing."
 msgstr ""
 
-#: src/lang.cls.php:85
+#: src/lang.cls.php:97
 msgid "The secret parameter is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:89
+#: src/lang.cls.php:101
 msgid "The response parameter is missing."
 msgstr ""
 
-#: src/lang.cls.php:93
+#: src/lang.cls.php:105
 msgid "The response parameter is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:97
+#: src/lang.cls.php:109
 msgid "The request is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:101
-msgid ""
-"The response is no longer valid: either is too old or has been used "
-"previously."
+#: src/lang.cls.php:113
+msgid "The response is no longer valid: either is too old or has been used previously."
 msgstr ""
 
-#. #-#-#-#-#  dologin.pot (DoLogin Security 2.9.3)  #-#-#-#-#
-#. Plugin Name of the plugin/theme
-#: src/lang.cls.php:109 tpl/entry.tpl.php:15
-msgid "DoLogin Security"
+#: src/pswdless.cls.php:253
+msgid "Failed to protect the passwordless login token."
 msgstr ""
 
-#: src/sms.cls.php:178
-msgid "Dynamic Code:%1$s.(Tag:%2$s) From: "
+#: src/pswdless.cls.php:264
+msgid "Failed to save the passwordless login link."
 msgstr ""
 
-#: src/util.cls.php:199
-msgid "just now"
+#: src/pswdless.cls.php:280
+msgid "Copy this passwordless login link now. For database-leak protection, its secret token is not stored and cannot be shown again."
 msgstr ""
 
-#: src/util.cls.php:199
-msgid "right now"
+#: src/pswdless.cls.php:282
+msgid "Continue to Passwordless Links"
 msgstr ""
 
-#: src/util.cls.php:201
-msgid " %s ago"
+#: src/pswdless.cls.php:283
+msgid "Passwordless Link Created"
 msgstr ""
 
-#: src/util.cls.php:229
-msgid "&laquo;"
+#: src/site.cls.php:394
+msgid "Failed to protect the site connection token."
 msgstr ""
 
-#: src/util.cls.php:230
-msgid "&raquo;"
+#: src/site.cls.php:405
+msgid "Failed to save the site connection token."
 msgstr ""
 
-#: tpl/entry.tpl.php:8 tpl/pswdless.tpl.php:8
-msgid "Passwordless Login"
+#: src/site.cls.php:421
+msgid "Copy this child-site connection token now. For database-leak protection, its secret value is not stored and cannot be shown again."
 msgstr ""
 
-#: tpl/entry.tpl.php:9 tpl/log.tpl.php:14
-msgid "Login Attempts Log"
+#: src/site.cls.php:423
+msgid "Continue to Site Connections"
 msgstr ""
 
-#: tpl/entry.tpl.php:49
-msgid "Rate Us!"
+#: src/site.cls.php:424
+msgid "Site Connection Token Created"
 msgstr ""
 
-#: tpl/log.tpl.php:18
-msgid "Clear records older than one month"
+#: src/sms.cls.php:23
+msgid "You need to setup your Dologin Phone number before enabling this setting to avoid yourself being blocked from next time login."
 msgstr ""
 
-#: tpl/log.tpl.php:22
-msgid "Total"
-msgstr ""
-
-#: tpl/log.tpl.php:30 tpl/pswdless.tpl.php:20
-msgid "Date"
-msgstr ""
-
-#: tpl/log.tpl.php:31
-msgid "IP"
-msgstr ""
-
-#: tpl/log.tpl.php:32
-msgid "GeoLocation"
-msgstr ""
-
-#: tpl/log.tpl.php:33
-msgid "Login As"
-msgstr ""
-
-#: tpl/log.tpl.php:34
-msgid "Gateway"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:12
-msgid "Generate Links in Users List"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:21
-msgid "User"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:22
-msgid "Link"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:23
-msgid "Created By"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:24
-msgid "Count"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:25
-msgid "Last Used At"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:26
-msgid "Expired At"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:27
-msgid "One Time Usage"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:28
-msgid "Status"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:37
-msgid "Click to copy"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:44
-msgid "+7 Days"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:54
-msgid "Active"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:56
-msgid "Disabled"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:67
-msgid "Here you can generate login links and manage them."
-msgstr ""
-
-#: tpl/pswdless.tpl.php:70
-msgid ""
-"Call the function %s to generate one passwordless login link for the current "
-"user."
-msgstr ""
-
-#: tpl/pswdless.tpl.php:72
-msgid ""
-"Call the function %1$s to generate a passwordless login link for the user "
-"which ID is %2$s."
-msgstr ""
-
-#: tpl/pswdless.tpl.php:74
-msgid "The generated one-time used link will be expired after 7 days."
-msgstr ""
-
-#: tpl/pswdless.tpl.php:76
-msgid "Define const %s to avoid redirecting to setting page after installtion."
-msgstr ""
-
-#: tpl/pswdless.tpl.php:83
-msgid "List all passwordless links"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:85
-msgid "Generate a passwordless link for one username (for the login name %s)"
-msgstr ""
-
-#: tpl/pswdless.tpl.php:87
-msgid "Delete a passwordless link w/ the ID in list (for the record w/ ID %s)"
-msgstr ""
-
-#: tpl/pswdless_cfm.tpl.php:10
-msgid "Notice"
-msgstr ""
-
-#: tpl/pswdless_cfm.tpl.php:12
-msgid "You will login as the following user"
-msgstr ""
-
-#: tpl/pswdless_cfm.tpl.php:18
-msgid "Note: this is a one time usage link."
-msgstr ""
-
-#: tpl/pswdless_cfm.tpl.php:24
-msgid "Click here to login"
-msgstr ""
-
-#: tpl/setting.tpl.php:13
-msgid "Limit Login Attempt Settings"
-msgstr ""
-
-#: tpl/setting.tpl.php:17
-msgid "Lockout"
-msgstr ""
-
-#: tpl/setting.tpl.php:19
-msgid "Allowed retries"
-msgstr ""
-
-#: tpl/setting.tpl.php:20
-msgid "minutes lockout"
-msgstr ""
-
-#: tpl/setting.tpl.php:22
-msgid ""
-"If hit %1$s maximum retries in %2$s minutes, the login attempt from that IP "
-"will be temporarily disabled."
-msgstr ""
-
-#: tpl/setting.tpl.php:28
-msgid "Short Code Auth Settings"
-msgstr ""
-
-#: tpl/setting.tpl.php:32
-msgid "Two Step SMS Auth"
-msgstr ""
-
-#: tpl/setting.tpl.php:36
-msgid "Verify free text code for each login attempt."
-msgstr ""
-
-#: tpl/setting.tpl.php:37
-msgid "Users need to setup the Dologin Phone number in their profile."
-msgstr ""
-
-#: tpl/setting.tpl.php:38
-msgid "The phone number need to specify the coutry calling codes."
-msgstr ""
-
-#: tpl/setting.tpl.php:39
-msgid "Text message is free sent by API from %s."
-msgstr ""
-
-#: tpl/setting.tpl.php:45
-msgid "Force SMS Auth Validation"
-msgstr ""
-
-#: tpl/setting.tpl.php:49
-msgid ""
-"If enabled this, any user without phone set in profile will not be able to "
-"login."
-msgstr ""
-
-#: tpl/setting.tpl.php:50
+#: src/sms.cls.php:23
 msgid "Click here to set your Dologin Security phone number"
 msgstr ""
 
-#: tpl/setting.tpl.php:52
-msgid ""
-"You need to setup your Dologin Phone number before enabling this setting to "
-"avoid yourself being blocked from next time login."
+#. translators: 1: the dynamic login code, 2: a short tag id.
+#: src/sms.cls.php:212
+msgid "Dynamic Code:%1$s.(Tag:%2$s) From: "
 msgstr ""
 
-#: tpl/setting.tpl.php:56
-msgid "Test SMS message"
+#: src/twofa.cls.php:36
+msgid "Code verification failed!"
+msgstr ""
+
+#: src/twofa.cls.php:42
+msgid "You have set your 2FA secret before!"
+msgstr ""
+
+#: src/twofa.cls.php:49
+msgid "Failed to encrypt the 2FA secret. The secret was not saved."
+msgstr ""
+
+#: src/twofa.cls.php:53
+msgid "Congratulations! Your 2FA is successfully enabled!"
+msgstr ""
+
+#: src/twofa.cls.php:70
+msgid "You need to install the following plugin to enable 2FA"
+msgstr ""
+
+#: src/twofa.cls.php:71
+#: src/twofa.cls.php:90
+msgid "Dologin Notice"
+msgstr ""
+
+#: src/twofa.cls.php:80
+msgid "Code"
+msgstr ""
+
+#: src/twofa.cls.php:82
+msgid "Enable 2FA"
+msgstr ""
+
+#: src/twofa.cls.php:85
+msgid "Please scan this barcode w/ your phone 2FA app (e.g. KeyLockr or Google Authenticator) and type the code in 2FA app below."
+msgstr ""
+
+#: src/twofa.cls.php:87
+#: tpl/setting.tpl.php:83
+msgid "You need to setup your 2FA before enabling this setting to avoid yourself being blocked from next time login."
+msgstr ""
+
+#: src/twofa.cls.php:158
+#: src/twofa.cls.php:319
+msgid "The stored 2FA secret cannot be decrypted. Restore the WordPress authentication salts or reset this user's 2FA secret."
+msgstr ""
+
+#: src/twofa.cls.php:322
+msgid "Please provide the code from your 2FA app"
+msgstr ""
+
+#: src/util.cls.php:160
+msgid "just now"
+msgstr ""
+
+#: src/util.cls.php:160
+msgid "right now"
+msgstr ""
+
+#. translators: %s: human-readable elapsed time such as "5m" or "2h".
+#: src/util.cls.php:163
+msgid " %s ago"
+msgstr ""
+
+#: src/util.cls.php:191
+msgid "&laquo;"
+msgstr ""
+
+#: src/util.cls.php:192
+msgid "&raquo;"
+msgstr ""
+
+#: tpl/easylogin_cfm.tpl.php:18
+msgid "DoLogin Easy Login Notice"
+msgstr ""
+
+#: tpl/easylogin_cfm.tpl.php:19
+#: tpl/pswdless_cfm.tpl.php:19
+msgid "You will login as the following user"
+msgstr ""
+
+#: tpl/easylogin_cfm.tpl.php:21
+msgid "to the site:"
+msgstr ""
+
+#: tpl/easylogin_cfm.tpl.php:26
+#: tpl/pswdless_cfm.tpl.php:27
+msgid "Click here to login"
+msgstr ""
+
+#: tpl/entry.tpl.php:13
+#: tpl/site.tpl.php:60
+msgid "Site Connections"
+msgstr ""
+
+#: tpl/entry.tpl.php:15
+#: tpl/pswdless.tpl.php:18
+msgid "Passwordless Login"
+msgstr ""
+
+#: tpl/entry.tpl.php:16
+#: tpl/log.tpl.php:18
+#: tpl/widget.tpl.php:17
+msgid "Login Attempts Log"
+msgstr ""
+
+#: tpl/entry.tpl.php:58
+msgid "Rate Us!"
+msgstr ""
+
+#: tpl/log.tpl.php:22
+msgid "Clear records older than one month"
+msgstr ""
+
+#: tpl/log.tpl.php:26
+msgid "Total"
+msgstr ""
+
+#: tpl/log.tpl.php:34
+#: tpl/pswdless.tpl.php:30
+msgid "Date"
+msgstr ""
+
+#: tpl/log.tpl.php:35
+msgid "IP"
+msgstr ""
+
+#: tpl/log.tpl.php:36
+msgid "GeoLocation"
+msgstr ""
+
+#: tpl/log.tpl.php:37
+#: tpl/site.tpl.php:77
+msgid "Login As"
+msgstr ""
+
+#: tpl/log.tpl.php:38
+msgid "Gateway"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:14
+msgid "Force KeyLockr SSO is enabled. Passwordless links remain manageable here but cannot be used to log in."
+msgstr ""
+
+#: tpl/pswdless.tpl.php:22
+msgid "Generate Links in Users List"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:31
+msgid "User"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:32
+msgid "Link"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:33
+msgid "Created By"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:34
+msgid "Count"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:35
+msgid "Last Used At"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:36
+msgid "Expired At"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:37
+msgid "One Time Usage"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:38
+#: tpl/site.tpl.php:79
+msgid "Status"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:47
+msgid "Secret not stored. Generate a new link to copy it again."
+msgstr ""
+
+#: tpl/pswdless.tpl.php:54
+msgid "+7 Days"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:57
+msgid "Yes"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:57
+msgid "No"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:64
+#: tpl/site.tpl.php:116
+msgid "Active"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:66
+#: tpl/site.tpl.php:118
+msgid "Disabled"
+msgstr ""
+
+#: tpl/pswdless.tpl.php:77
+msgid "Here you can generate login links and manage them."
+msgstr ""
+
+#. translators: %s: dologin_gen_link() PHP call example.
+#: tpl/pswdless.tpl.php:85
+msgid "Call the function %s to generate one passwordless login link for the current user."
+msgstr ""
+
+#. translators: 1: dologin_gen_link() PHP call example, 2: the $user_id variable.
+#: tpl/pswdless.tpl.php:97
+msgid "Call the function %1$s to generate a passwordless login link for the user which ID is %2$s."
+msgstr ""
+
+#: tpl/pswdless.tpl.php:105
+msgid "The generated one-time used link will be expired after 7 days."
+msgstr ""
+
+#. translators: %s: the SILENCE_INSTALL PHP constant.
+#: tpl/pswdless.tpl.php:112
+msgid "Define const %s to avoid redirecting to setting page after installtion."
+msgstr ""
+
+#: tpl/pswdless.tpl.php:123
+msgid "List all passwordless links"
+msgstr ""
+
+#. translators: %s: an example login name.
+#: tpl/pswdless.tpl.php:130
+msgid "Generate a passwordless link for one username (for the login name %s)"
+msgstr ""
+
+#. translators: %s: an example record ID.
+#: tpl/pswdless.tpl.php:142
+msgid "Delete a passwordless link w/ the ID in list (for the record w/ ID %s)"
+msgstr ""
+
+#: tpl/pswdless_cfm.tpl.php:18
+msgid "DoLogin Notice"
+msgstr ""
+
+#: tpl/pswdless_cfm.tpl.php:22
+msgid "Note: this is a one time usage link."
+msgstr ""
+
+#: tpl/setting.tpl.php:23
+msgid "Limit Login Attempt Settings"
+msgstr ""
+
+#: tpl/setting.tpl.php:28
+msgid "Lockout"
+msgstr ""
+
+#: tpl/setting.tpl.php:30
+msgid "Allowed retries"
+msgstr ""
+
+#: tpl/setting.tpl.php:31
+msgid "minutes lockout"
+msgstr ""
+
+#. translators: 1: max retries count, 2: lockout duration in minutes.
+#: tpl/setting.tpl.php:37
+msgid "If hit %1$s maximum retries in %2$s minutes, the login attempt from that IP will be temporarily disabled."
+msgstr ""
+
+#: tpl/setting.tpl.php:49
+msgid "2FA Settings"
+msgstr ""
+
+#: tpl/setting.tpl.php:54
+msgid "Two-factor Authentication"
 msgstr ""
 
 #: tpl/setting.tpl.php:58
-msgid "This will send a test text message to your phone number."
+msgid "Verify 2FA code for each login attempt."
 msgstr ""
 
+#: tpl/setting.tpl.php:59
+msgid "Users need to finish 2FA validation in their profile."
+msgstr ""
+
+#. translators: %s: example 2FA app name.
 #: tpl/setting.tpl.php:65
-msgid "reCAPTCHA Settings"
+msgid "Can use any 2FA app, e.g. %s"
 msgstr ""
 
-#: tpl/setting.tpl.php:69
-msgid "Google reCAPTCHA"
-msgstr ""
-
-#: tpl/setting.tpl.php:73 tpl/setting.tpl.php:83 tpl/setting.tpl.php:94
-msgid "This will enable reCAPTCHA on %s page."
-msgstr ""
-
-#: tpl/setting.tpl.php:73
-msgid "Login"
+#: tpl/setting.tpl.php:75
+msgid "Force 2FA Auth Validation"
 msgstr ""
 
 #: tpl/setting.tpl.php:79
-msgid "Google reCAPTCHA on Register Page"
+msgid "If enabled this, any user without 2FA setup in profile will not be able to login."
 msgstr ""
 
-#: tpl/setting.tpl.php:83
-msgid "Register"
+#: tpl/setting.tpl.php:80
+msgid "Click here to manage your 2FA secret"
 msgstr ""
 
-#: tpl/setting.tpl.php:90
-msgid "Google reCAPTCHA on Lost Password Page"
+#: tpl/setting.tpl.php:92
+msgid "KeyLockr SSO Settings"
 msgstr ""
 
-#: tpl/setting.tpl.php:94
-msgid "Lost Password"
+#: tpl/setting.tpl.php:97
+msgid "App Tag"
 msgstr ""
 
-#: tpl/setting.tpl.php:100
-msgid "Google reCAPTCHA Keys"
+#: tpl/setting.tpl.php:101
+msgid "Copy the effective App Tag from KeyLockr. If no custom App Tag is set, use the decimal Service ID."
 msgstr ""
 
-#: tpl/setting.tpl.php:105
-msgid "Site Key"
+#: tpl/setting.tpl.php:104
+msgid "Quick Setup"
 msgstr ""
 
-#: tpl/setting.tpl.php:109
-msgid "Secret Key"
+#: tpl/setting.tpl.php:107
+msgid "Create a KeyLockr SSO service"
 msgstr ""
 
-#: tpl/setting.tpl.php:123
-msgid "<a %s>Click here</a> to generate keys from Google reCAPTCHA."
+#: tpl/setting.tpl.php:108
+msgid "Keep App Data Storage enabled and add these Server IPs:"
 msgstr ""
 
-#: tpl/setting.tpl.php:124
-msgid "Note: v2 supported only."
+#: tpl/setting.tpl.php:114
+msgid "Automatic detection failed. Enter this server outbound public IP in KeyLockr manually and reload in a few minutes to retry."
 msgstr ""
 
-#: tpl/setting.tpl.php:130
-msgid "General Settings"
+#: tpl/setting.tpl.php:117
+msgid "Paste the effective App Tag above and save these settings."
 msgstr ""
 
-#: tpl/setting.tpl.php:134 tpl/setting.tpl.php:172
-msgid "Whitelist"
+#: tpl/setting.tpl.php:118
+msgid "Link this WordPress account, enable SSO login, and test it before forcing QR-only login."
 msgstr ""
 
-#: tpl/setting.tpl.php:141
-msgid "Format"
+#: tpl/setting.tpl.php:127
+msgid "Site Key Fingerprint"
 msgstr ""
 
-#: tpl/setting.tpl.php:142
-msgid "Both prefix and value are case insensitive."
+#: tpl/setting.tpl.php:129
+msgid "Unavailable"
 msgstr ""
 
-#: tpl/setting.tpl.php:143
-msgid "Spaces around comma/colon are allowed."
+#: tpl/setting.tpl.php:135
+msgid "Reset Site Keys"
 msgstr ""
 
-#: tpl/setting.tpl.php:144
-msgid "One rule set per line."
+#: tpl/setting.tpl.php:136
+msgid "The signing key keeps this WordPress site on one KeyLockr connection identity, while every handshake uses a fresh encryption key. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login."
 msgstr ""
 
-#: tpl/setting.tpl.php:147
-msgid "Prefix list"
+#: tpl/setting.tpl.php:145
+msgid "KeyLockr SSO Login"
 msgstr ""
 
 #: tpl/setting.tpl.php:149
-msgid "IP prefix with colon is optional. IP value support wildcard (*)."
+msgid "Show KeyLockr QR login and verify both app_verify and the encrypted appdata hash."
 msgstr ""
 
 #: tpl/setting.tpl.php:151
+msgid "Link Current Account"
+msgstr ""
+
+#: tpl/setting.tpl.php:154
+msgid "Unlock KeyLockr on your phone when prompted. The account is linked only after app data is written and read back successfully."
+msgstr ""
+
+#: tpl/setting.tpl.php:162
+msgid "Force KeyLockr SSO"
+msgstr ""
+
+#: tpl/setting.tpl.php:166
+msgid "Hide the password form and allow only KeyLockr QR login. DoLogin enables this only after the current administrator has a verified binding for the saved App Tag and site keys. Once enabled, failures never restore other login methods; rename the plugin folder through FTP or the hosting file manager if external recovery is required."
+msgstr ""
+
+#: tpl/setting.tpl.php:173
+msgid "reCAPTCHA Settings"
+msgstr ""
+
+#: tpl/setting.tpl.php:178
+msgid "Cloudflare Turnstile"
+msgstr ""
+
+#. translators: %s: page name where the captcha is shown.
+#: tpl/setting.tpl.php:185
+#: tpl/setting.tpl.php:201
+#: tpl/setting.tpl.php:218
+msgid "This will enable reCAPTCHA on %s page."
+msgstr ""
+
+#: tpl/setting.tpl.php:186
+msgid "Login"
+msgstr ""
+
+#: tpl/setting.tpl.php:194
+msgid "Cloudflare Turnstile on Register Page"
+msgstr ""
+
+#: tpl/setting.tpl.php:202
+msgid "Register"
+msgstr ""
+
+#: tpl/setting.tpl.php:211
+msgid "Cloudflare Turnstile on Lost Password Page"
+msgstr ""
+
+#: tpl/setting.tpl.php:219
+msgid "Lost Password"
+msgstr ""
+
+#: tpl/setting.tpl.php:227
+msgid "Cloudflare Turnstile Keys"
+msgstr ""
+
+#: tpl/setting.tpl.php:232
+msgid "Site Key"
+msgstr ""
+
+#: tpl/setting.tpl.php:236
+msgid "Secret Key"
+msgstr ""
+
+#. translators: %s: anchor tag attributes for the Cloudflare dashboard link.
+#: tpl/setting.tpl.php:254
+msgid "<a %s>Click here</a> to generate keys from Cloudflare Turnstile."
+msgstr ""
+
+#: tpl/setting.tpl.php:260
+msgid "Cloudflare Turnstile is better than Google reCAPTCHA."
+msgstr ""
+
+#: tpl/setting.tpl.php:267
+msgid "General Settings"
+msgstr ""
+
+#: tpl/setting.tpl.php:272
+#: tpl/setting.tpl.php:331
+msgid "Whitelist"
+msgstr ""
+
+#: tpl/setting.tpl.php:279
+msgid "Format"
+msgstr ""
+
+#: tpl/setting.tpl.php:280
+msgid "Both prefix and value are case insensitive."
+msgstr ""
+
+#: tpl/setting.tpl.php:281
+msgid "Spaces around comma/colon are allowed."
+msgstr ""
+
+#: tpl/setting.tpl.php:282
+msgid "One rule set per line."
+msgstr ""
+
+#: tpl/setting.tpl.php:285
+msgid "Prefix list"
+msgstr ""
+
+#: tpl/setting.tpl.php:287
+msgid "IP prefix with colon is optional. IP value support wildcard (*)."
+msgstr ""
+
+#. translators: %s: the # comment character.
+#: tpl/setting.tpl.php:293
 msgid "Use %s to append comments in the end of each line."
 msgstr ""
 
-#: tpl/setting.tpl.php:152
+#. translators: %s: the !: exclusion operator.
+#: tpl/setting.tpl.php:302
 msgid "Use %s to exclude one value."
 msgstr ""
 
-#: tpl/setting.tpl.php:156
+#. translators: %s: the doapi.us domain.
+#: tpl/setting.tpl.php:310
 msgid "This will send a request to %s to get your public Geolocation info."
 msgstr ""
 
-#: tpl/setting.tpl.php:156
+#. translators: %s: the doapi.us domain.
+#: tpl/setting.tpl.php:310
 msgid "Check My Geolocation Data"
 msgstr ""
 
-#: tpl/setting.tpl.php:165
+#: tpl/setting.tpl.php:319
 msgid "Blacklist"
 msgstr ""
 
-#: tpl/setting.tpl.php:172
+#. translators: %s: the Whitelist section name.
+#: tpl/setting.tpl.php:330
 msgid "Same format as %s"
 msgstr ""
 
-#: tpl/setting.tpl.php:174 tpl/setting.tpl.php:175 tpl/setting.tpl.php:176
-#: tpl/setting.tpl.php:177 tpl/setting.tpl.php:178 tpl/setting.tpl.php:179
+#: tpl/setting.tpl.php:336
+#: tpl/setting.tpl.php:337
+#: tpl/setting.tpl.php:338
+#: tpl/setting.tpl.php:339
+#: tpl/setting.tpl.php:340
+#: tpl/setting.tpl.php:341
 msgid "Example"
 msgstr ""
 
-#: tpl/setting.tpl.php:175
+#: tpl/setting.tpl.php:337
 msgid "Dropped optional prefix"
 msgstr ""
 
-#: tpl/setting.tpl.php:179
+#: tpl/setting.tpl.php:341
 msgid "Match all visitors from US except the IP 1.2.3.4"
 msgstr ""
 
-#: tpl/setting.tpl.php:185
+#: tpl/setting.tpl.php:347
 msgid "GDPR Compliance"
 msgstr ""
 
-#: tpl/setting.tpl.php:189
-msgid ""
-"With this feature turned on, all logged IPs get obfuscated (md5-hashed)."
+#: tpl/setting.tpl.php:351
+msgid "With this feature turned on, all logged IPs get obfuscated (md5-hashed)."
 msgstr ""
 
-#: tpl/setting.tpl.php:195
-msgid "Auto Upgrade"
-msgstr ""
-
-#: tpl/setting.tpl.php:199
-msgid "Enable this option to get the latest features at the first moment."
-msgstr ""
-
-#: tpl/setting.tpl.php:208 tpl/setting.tpl.php:209
+#: tpl/setting.tpl.php:362
+#: tpl/setting.tpl.php:363
 msgid "Save Changes"
 msgstr ""
 
-#. Description of the plugin/theme
-msgid ""
-"Passwordless login. Free text SMS code for 2nd step verification login. "
-"GeoLocation (Continent/Country/City) or IP range to limit login attempts. "
-"Support Whitelist and Blacklist. Support WooCommerce. Login attempt limit. "
-"CLI supported for generating passwordless login."
+#: tpl/site.tpl.php:14
+msgid "Force KeyLockr SSO is enabled. Connected-site login tokens remain manageable here but cannot be used to log in."
 msgstr ""
 
-#. Author of the plugin/theme
-msgid "WPDO"
+#: tpl/site.tpl.php:21
+msgid "Add Child Site Connection"
+msgstr ""
+
+#: tpl/site.tpl.php:26
+msgid "Token"
+msgstr ""
+
+#: tpl/site.tpl.php:33
+msgid "Add Site"
+msgstr ""
+
+#: tpl/site.tpl.php:37
+msgid "Add the child site's token you want to connect to."
+msgstr ""
+
+#: tpl/site.tpl.php:38
+msgid "This will allow you to login to other sites by one click in future."
+msgstr ""
+
+#: tpl/site.tpl.php:40
+msgid "Your root public key is:"
+msgstr ""
+
+#: tpl/site.tpl.php:64
+msgid "Generate Child Site Token from Users List"
+msgstr ""
+
+#: tpl/site.tpl.php:72
+msgid "Action"
+msgstr ""
+
+#: tpl/site.tpl.php:73
+msgid "Site Title"
+msgstr ""
+
+#: tpl/site.tpl.php:74
+msgid "Site URL"
+msgstr ""
+
+#: tpl/site.tpl.php:75
+msgid "Site Public Key"
+msgstr ""
+
+#: tpl/site.tpl.php:76
+msgid "Created At"
+msgstr ""
+
+#: tpl/site.tpl.php:78
+msgid "Last Used"
+msgstr ""
+
+#: tpl/site.tpl.php:89
+msgid "Easy Login"
+msgstr ""
+
+#: tpl/site.tpl.php:91
+msgid "Root Site"
+msgstr ""
+
+#: tpl/site.tpl.php:99
+msgid "The secret token was shown only when created and is not stored. Generate a new token if it was not copied."
+msgstr ""
+
+#: tpl/site.tpl.php:103
+msgid "Token expired"
+msgstr ""
+
+#: tpl/site.tpl.php:130
+msgid "Here you can connect child sites to allow login from a root site."
+msgstr ""
+
+#: tpl/site.tpl.php:131
+msgid "This is used to easy login if you have multiple WordPress sites to manage."
+msgstr ""
+
+#: tpl/widget.tpl.php:16
+msgid "Blocked login attempts total"
+msgstr ""
+
+#: tpl/widget.tpl.php:53
+msgid "No list yet."
+msgstr ""
+
+#: tpl/widget.tpl.php:75
+msgid "Check more"
 msgstr ""

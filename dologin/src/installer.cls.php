@@ -73,9 +73,16 @@ class Installer extends Instance {
 	 * @since  1.0
 	 */
 	public function dash_notifier_install_3rd() {
+		if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) || ( is_multisite() && ! is_super_admin() ) ) {
+			return;
+		}
+
 		! defined( 'SILENCE_INSTALL' ) && define( 'SILENCE_INSTALL', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- documented public API constant toggling silent install.
 
-		$slug = ! empty( $_GET['plugin'] ) ? sanitize_text_field( wp_unslash( $_GET['plugin'] ) ) : false; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce().
+		$slug = ! empty( $_GET['plugin'] ) && is_string( $_GET['plugin'] ) ? sanitize_key( wp_unslash( $_GET['plugin'] ) ) : false; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce().
+		if ( 'doqrcode' !== $slug ) {
+			return;
+		}
 
 		// Check if plugin is installed already
 		if ( ! $slug || $this->dash_notifier_is_plugin_active( $slug ) ) {
@@ -104,12 +111,22 @@ class Installer extends Instance {
 				$result   = $upgrader->install( $plugin_info->download_link );
 				ob_end_clean();
 			} catch ( \Exception $e ) {
+				ob_get_level() && ob_end_clean();
+				return;
+			} catch ( \Throwable $e ) {
+				ob_get_level() && ob_end_clean();
+				return;
+			}
+			if ( ! $result || is_wp_error( $result ) ) {
 				return;
 			}
 		}
 
 		if ( ! is_plugin_active( $plugin_path ) ) {
-			activate_plugin( $plugin_path );
+			$result = activate_plugin( $plugin_path );
+			if ( is_wp_error( $result ) ) {
+				return;
+			}
 		}
 	}
 

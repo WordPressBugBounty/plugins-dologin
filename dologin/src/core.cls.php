@@ -40,9 +40,14 @@ class Core extends Instance {
 
 		$this->cls( 'Site' )->init();
 
+		$this->cls( 'KLSso' )->init();
+
 		register_activation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::activate' );
 		register_deactivation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::deactivate' );
 		register_uninstall_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::uninstall' );
+
+		add_action( 'wp_initialize_site', __NAMESPACE__ . '\Util::new_site', 10, 1 );
+		add_action( 'wpmu_new_blog', __NAMESPACE__ . '\Util::new_site', 10, 1 );
 
 		$this->cls( 'Lang' )->init();
 	}

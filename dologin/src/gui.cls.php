@@ -47,18 +47,19 @@ class GUI extends Instance {
 	public function login_enqueue_scripts() {
 		$this->enqueue_style();
 
-		// JS is only for sms/2fa code
-		if ( ! Conf::val( '2fa' ) && ! Conf::val( 'sms' ) ) {
-			return;
+		if ( Conf::val( '2fa' ) && ! KLSso::force_enabled() ) {
+			wp_register_script( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.js', array( 'jquery' ), Core::VER, false );
+
+			$localize_data              = array();
+			$localize_data['login_url'] = get_rest_url( null, 'dologin/v1/2fa' );
+			wp_localize_script( 'dologin', 'dologin', $localize_data );
+
+			wp_enqueue_script( 'dologin' );
 		}
 
-		wp_register_script( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.js', array( 'jquery' ), Core::VER, false );
-
-		$localize_data              = array();
-		$localize_data['login_url'] = get_rest_url( null, 'dologin/v1/' . ( Conf::val( '2fa' ) ? '2fa' : 'sms' ) );
-		wp_localize_script( 'dologin', 'dologin', $localize_data );
-
-		wp_enqueue_script( 'dologin' );
+		if ( KLSso::enabled() || KLSso::force_enabled() ) {
+			$this->enqueue_klsso_script( 'login' );
+		}
 	}
 
 	/**
@@ -68,6 +69,7 @@ class GUI extends Instance {
 	 */
 	public function enqueue_style() {
 		wp_enqueue_style( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.css', array(), Core::VER, 'all' );
+		wp_enqueue_style( 'dologin-kl-sso', DOLOGIN_PLUGIN_URL . 'assets/kl-sso.css', array( 'dologin' ), Core::VER, 'all' );
 	}
 
 	/**
@@ -76,23 +78,70 @@ class GUI extends Instance {
 	 * @since 2.0
 	 */
 	public function enqueue_admin( $hook ) {
-		// Only enqueue on dologin pages
-		if ( empty( $_GET['page'] ) || strpos( sanitize_text_field( wp_unslash( $_GET['page'] ) ), 'dologin' ) !== 0 ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading current admin page slug only, no state change.
-			if ( $hook !== 'users.php' ) {
-				return;
-			}
+		$page = '';
+		if ( ! empty( $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading current admin page slug only, no state change.
+			$page = sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading current admin page slug only, no state change.
+		}
+
+		$is_dologin_page = $page && 0 === strpos( $page, 'dologin' );
+		$is_users_page   = 'users.php' === $hook;
+		$is_profile_page = 'profile.php' === $hook;
+		if ( ! $is_dologin_page && ! $is_users_page && ! $is_profile_page ) {
+			return;
 		}
 		$this->enqueue_style();
 
-		wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
+		if ( $is_dologin_page || $is_users_page ) {
+			wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
 
-		$localize_data                       = array();
-		$localize_data['url_test_sms']       = get_rest_url( null, 'dologin/v1/test_sms' );
-		$localize_data['url_myip']           = get_rest_url( null, 'dologin/v1/myip' );
-		$localize_data['current_user_phone'] = $this->cls( 'SMS' )->current_user_phone();
-		wp_localize_script( 'dologin_admin', 'dologin_admin', $localize_data );
+			$localize_data                       = array();
+			$localize_data['url_myip']          = get_rest_url( null, 'dologin/v1/myip' );
+			$localize_data['url_kl_reset_keys'] = get_rest_url( null, 'dologin/v1/kl_sso/reset_keys' );
+			$localize_data['nonce']             = wp_create_nonce( 'wp_rest' );
+			$localize_data['ip_lookup_progress'] = __( 'Looking up this IP address...', 'dologin' );
+			$localize_data['ip_lookup_failed']   = __( 'Failed to look up this IP address.', 'dologin' );
+			$localize_data['reset_keys_confirm'] = __( 'Reset the KeyLockr site keys? Future scans will create a new KeyLockr connection. Linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed.', 'dologin' );
+			$localize_data['resetting_keys']     = __( 'Resetting KeyLockr site keys...', 'dologin' );
+			$localize_data['reset_keys_failed']  = __( 'Failed to reset KeyLockr site keys.', 'dologin' );
+			wp_localize_script( 'dologin_admin', 'dologin_admin', $localize_data );
 
-		wp_enqueue_script( 'dologin_admin' );
+			wp_enqueue_script( 'dologin_admin' );
+		}
+
+		if ( KLSso::configured() && ( $is_dologin_page || $is_profile_page ) ) {
+			$this->enqueue_klsso_script( 'bind' );
+		}
+	}
+
+	/**
+	 * Load KeyLockr SSO QR client.
+	 */
+	public function enqueue_klsso_script( $mode ) {
+		wp_register_script( 'dologin_qrcode', DOLOGIN_PLUGIN_URL . 'qilu/npm/qrcode-generator/qrcode.js', array(), Core::VER, true );
+		wp_register_script( 'dologin_kl_sso', DOLOGIN_PLUGIN_URL . 'assets/kl-sso.js', array( 'jquery', 'dologin_qrcode' ), Core::VER, true );
+
+		wp_localize_script(
+			'dologin_kl_sso',
+			'dologin_kl_sso',
+			array(
+				'mode'       => $mode,
+				'force'      => KLSso::force_enabled(),
+				'url_start'  => get_rest_url( null, 'dologin/v1/kl_sso/start' ),
+				'url_frame'  => get_rest_url( null, 'dologin/v1/kl_sso/frame' ),
+				'url_unbind' => get_rest_url( null, 'dologin/v1/kl_sso/unbind' ),
+				'nonce'      => wp_create_nonce( 'wp_rest' ),
+				'i18n'      => array(
+					'connecting' => __( 'Connecting to KeyLockr...', 'dologin' ),
+					'new_qr'     => __( 'Get New QR', 'dologin' ),
+					'failed'     => __( 'KeyLockr SSO failed.', 'dologin' ),
+					'done'       => __( 'KeyLockr SSO verified.', 'dologin' ),
+					'unlink'     => __( 'Unlink KeyLockr SSO from this WordPress account?', 'dologin' ),
+				),
+			)
+		);
+
+		wp_enqueue_script( 'dologin_qrcode' );
+		wp_enqueue_script( 'dologin_kl_sso' );
 	}
 
 	/**
@@ -102,7 +151,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function login_form() {
-		if ( Conf::val( 'sms' ) || Conf::val( '2fa' ) ) {
+		if ( Conf::val( '2fa' ) && ! KLSso::force_enabled() ) {
 			echo '	<p id="dologin-process">
 						Dologin Security:
 						<span id="dologin-process-msg"></span>
@@ -114,7 +163,9 @@ class GUI extends Instance {
 				';
 		}
 
-		if ( Conf::val( 'cf' ) ) {
+		$this->cls( 'KLSso' )->login_form();
+
+		if ( Conf::val( 'cf' ) && ! KLSso::force_enabled() ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -126,14 +177,6 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function register_form() {
-		if ( Conf::val( 'sms_force' ) ) {
-			echo '	<p>
-						<label for="phone_number">' . esc_html__( 'Dologin Security Phone', 'dologin' ) . '</label>
-						<input type="text" name="phone_number" id="phone_number" class="input" size="25" required />
-					</p>
-			';
-		}
-
 		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
@@ -355,7 +398,6 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function display_msg() {
-		$this->cls( 'SMS' )->gui_notice();
 		$this->cls( 'TwoFA' )->gui_notice();
 
 		// One time msg

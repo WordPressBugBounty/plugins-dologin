@@ -22,6 +22,7 @@ if ( ! headers_sent() ) {
 		<p style="color:#b36b00;"><?php esc_html_e( 'Note: this is a one time usage link.', 'dologin' ); ?></p>
 	<?php endif; ?>
 	<form method="post" style="margin-top:24px;">
+		<?php wp_nonce_field( $confirm_nonce_action, 'dologin_confirm_nonce' ); ?>
 		<input type="hidden" name="confirmed" value="1">
 		<button type="submit" style="padding:10px 24px;font-size:1em;background:#2a9d2a;color:#fff;border:none;border-radius:4px;cursor:pointer;"><?php esc_html_e( 'Click here to login', 'dologin' ); ?></button>
 	</form>

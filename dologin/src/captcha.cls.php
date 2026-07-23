@@ -34,7 +34,7 @@ class Captcha extends Instance {
 	public function authenticate() {
 		// This runs on the public login form / REST 2-step and is authenticated by the Turnstile token itself, not a WP nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( empty( $_POST['cf-turnstile-response'] ) ) {
+		if ( empty( $_POST['cf-turnstile-response'] ) || ! is_string( $_POST['cf-turnstile-response'] ) ) {
 			throw new \Exception( 'captcha_missing' );
 		}
 
@@ -55,12 +55,14 @@ class Captcha extends Instance {
 			'remoteip' => IP::me(),
 		);
 
-		$res = wp_remote_post(
+		$res = wp_safe_remote_post(
 			$url,
 			array(
-				'body'      => $data,
-				'timeout'   => 15,
-				'sslverify' => true,
+				'body'                => $data,
+				'timeout'             => 10,
+				'redirection'         => 0,
+				'limit_response_size' => 32768,
+				'sslverify'           => true,
 			)
 		);
 
@@ -69,7 +71,11 @@ class Captcha extends Instance {
 			throw new \Exception( esc_html( $error_message ) );
 		}
 
-		$res = json_decode( $res['body'], true );
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			throw new \Exception( 'captcha_service_error' );
+		}
+
+		$res = json_decode( wp_remote_retrieve_body( $res ), true );
 		defined( 'debug' ) && debug( '2fa challenge res:', $res );
 
 		if ( empty( $res['success'] ) ) {
@@ -91,9 +97,9 @@ class Captcha extends Instance {
 	 */
 	private function _store_token() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-		$token      = md5( sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) . IP::me() );
+		$response   = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) );
 		$expiration = 5 * MINUTE_IN_SECONDS;
-		set_transient( $this->_generate_token_tag(), $token, $expiration );
+		set_transient( $this->_generate_token_tag( $response ), true, $expiration );
 	}
 
 	/**
@@ -101,7 +107,7 @@ class Captcha extends Instance {
 	 *
 	 * @since 4.2
 	 */
-	private function _generate_token_tag() {
+	private function _generate_token_tag( $response ) {
 		$tag = IP::me();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( ! empty( $_POST['log'] ) ) {
@@ -113,7 +119,7 @@ class Captcha extends Instance {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$tag = sanitize_text_field( wp_unslash( $_POST['user_login'] ) );
 		}
-		return 'dologin_tmp_data_' . md5( $tag );
+		return 'dologin_tmp_data_' . hash( 'sha256', $tag . '|' . IP::me() . '|' . (string) $response );
 	}
 
 	/**
@@ -123,11 +129,11 @@ class Captcha extends Instance {
 	 */
 	private function _validate_token() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-		$token         = md5( sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) . IP::me() );
-		$transient_key = $this->_generate_token_tag();
+		$response      = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) );
+		$transient_key = $this->_generate_token_tag( $response );
 		$stored_token  = get_transient( $transient_key );
 
-		if ( $stored_token === $token ) {
+		if ( true === $stored_token || '1' === $stored_token ) {
 			delete_transient( $transient_key );
 			return true;
 		}

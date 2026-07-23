@@ -46,12 +46,26 @@ class Site extends Instance {
 	}
 
 	/**
+	 * Check cryptographic requirements for site connections.
+	 *
+	 * @since 4.6.5
+	 */
+	private function _sodium_ready() {
+		return KLSso::sodium_ready()
+			&& function_exists( 'sodium_crypto_sign' )
+			&& function_exists( 'sodium_crypto_sign_open' );
+	}
+
+	/**
 	 * Easy login to child site init and jump
 	 *
 	 * @since  4.0
 	 */
 	private function _easy_login() {
 		global $wpdb;
+		if ( ! $this->_sodium_ready() ) {
+			exit( 'dologin_sodium_unavailable' );
+		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$pid = empty( $_GET['dologin_id'] ) ? 0 : (int) $_GET['dologin_id'];
@@ -60,21 +74,38 @@ class Site extends Instance {
 		}
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; id is prepared.
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `$this->_tb` WHERE id = %d", $pid ) );
-		if ( ! $row ) {
+		if ( ! $row || 1 !== (int) $row->active || 0 !== (int) $row->is_child || ! wp_http_validate_url( $row->url ) ) {
 			exit( 'Invalid record' );
 		}
 
-		$data = implode(
-			',',
+		$audience = $this->_easy_login_audience( $row->url );
+		try {
+			$jti = bin2hex( random_bytes( 16 ) );
+		} catch ( \Exception $ex ) {
+			exit( 'dologin_token_generation_failed' );
+		}
+		$claims = array(
+			'v'   => 2,
+			'uid' => (int) $row->user_id,
+			'pk'  => (string) Conf::val( '_pk' ),
+			'aud' => $audience,
+			'iat' => time(),
+			'jti' => $jti,
+		);
+		$claims_json = $this->_easy_login_claims_json( $claims );
+		$signature   = $claims_json ? $this->_pack_b64sign( $claims_json ) : false;
+		if ( ! $audience || ! $claims_json || ! $signature ) {
+			exit( 'dologin_token_generation_failed' );
+		}
+		$data = wp_json_encode(
 			array(
-				$row->user_id,
-				Conf::val( '_pk' ),
-				$this->_pack_b64sign( time() ),
+				'claims' => $claims,
+				'sig'    => $signature,
 			)
 		);
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- benign base64 encoding of the easy-login token payload.
-		$url = $row->url . '?' . self::QS_NAME_EASY_LOGIN . '=' . base64_encode( $data );
-		defined( 'debug' ) && debug( 'Easy login to child site w/ token: ' . $url );
+		$url = add_query_arg( self::QS_NAME_EASY_LOGIN, base64_encode( $data ), $row->url );
+		defined( 'debug' ) && debug( 'Easy login token generated for child site.' );
 		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-site redirect to the connected child site.
 		wp_redirect( $url );
 		exit();
@@ -90,23 +121,32 @@ class Site extends Instance {
 
 		$username = 'N/A';
 
-		// This tokenized endpoint bypasses wp-login, so enforce the per-IP failure limit here too.
+		// This endpoint bypasses wp-login and must apply the same IP rules and failure limits.
+		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
+			exit( 'dologin_ip_denied' );
+		}
 		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
 			exit( 'dologin_rate_limited' );
+		}
+		if ( ! $this->_sodium_ready() ) {
+			exit( 'dologin_sodium_unavailable' );
 		}
 
 		// Magic-link endpoint authenticated by the signed token, not a nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$raw_token = isset( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ) : '';
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- benign base64 decoding of the easy-login token payload.
-		$info = explode( ',', base64_decode( $raw_token ) );
-		if ( empty( $info[0] ) || empty( $info[1] ) || empty( $info[2] ) ) {
+		$raw_token = isset( $_GET[ self::QS_NAME_EASY_LOGIN ] ) && is_string( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ) : '';
+		if ( KLSso::force_enabled() ) {
+			exit( 'dologin_kl_sso_required' );
+		}
+		$token = $this->_decode_easy_login_token( $raw_token );
+		if ( ! $token ) {
 			defined( 'debug' ) && debug( 'dologin easy login token failed to decode' );
 			return $this->_failed_login( $username );
 		}
 
-		$uid = (int) $info[0];
-		$pk  = $info[1];
+		$claims = $token['claims'];
+		$uid    = $claims['uid'];
+		$pk     = $claims['pk'];
 
 		// Validate root site record FIRST; the public key must match a stored, trusted connection.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
@@ -119,24 +159,37 @@ class Site extends Instance {
 			exit( 'dologin_invalid_root_record' );
 		}
 
-		// Verify the signature against the STORED public key, never the one supplied in the request.
-		$ts = $this->_unpack_b64sign( $info[2], $row->pk );
-		if ( ! $ts ) {
+		// Verify the complete assertion against the stored public key, never a request-only key.
+		$signed_claims = $this->_unpack_b64sign( $token['sig'], $row->pk );
+		if ( ! is_string( $signed_claims ) || ! hash_equals( $token['claims_json'], $signed_claims ) ) {
 			defined( 'debug' ) && debug( 'dologin easy login token invalid' );
 			return $this->_failed_login( $username );
 		}
-		if ( $ts < time() - 3600 ) { // Token should not be older than 1 hour
-			defined( 'debug' ) && debug( 'dologin easy login token expired. Got ts: ' . $ts . ', current: ' . time() );
+		$audience = $this->_easy_login_audience( admin_url() );
+		if ( ! $audience || ! hash_equals( $audience, $claims['aud'] ) ) {
+			defined( 'debug' ) && debug( 'dologin easy login token audience mismatch' );
 			return $this->_failed_login( $username );
 		}
-		// Check if last used timestamp is the current one to prevent replay attacks.
-		if ( $row->last_used_at && (string) $row->last_used_at === (string) $ts ) {
+		$ts  = $claims['iat'];
+		$now = time();
+		if ( $ts < $now - 3600 || $ts > $now + 300 ) { // Tokens cannot be older than one hour or materially in the future.
+			defined( 'debug' ) && debug( 'dologin easy login token expired. Got ts: ' . $ts . ', current: ' . $now );
+			return $this->_failed_login( $username );
+		}
+		// Only a token newer than every previously consumed token may proceed.
+		if ( (int) $row->last_used_at >= $ts ) {
 			defined( 'debug' ) && debug( 'dologin easy login already used' . $ts );
 			exit( 'dologin_link_used' );
 		}
 
 		$user_info = get_userdata( $uid );
+		if ( ! $user_info ) {
+			return $this->_failed_login( $username );
+		}
+		$username = $user_info->user_login;
 		defined( 'debug' ) && debug( 'dologin easy login passed, uid: ' . $uid . ', username: ' . $user_info->user_login );
+
+		$confirm_nonce_action = 'dologin_easy_login_confirm_' . hash( 'sha256', $raw_token );
 
 		// Show login confirm page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -145,12 +198,22 @@ class Site extends Instance {
 			exit;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$confirm_nonce = empty( $_POST['dologin_confirm_nonce'] ) || ! is_string( $_POST['dologin_confirm_nonce'] ) ? '' : sanitize_text_field( wp_unslash( $_POST['dologin_confirm_nonce'] ) );
+		if ( ! wp_verify_nonce( $confirm_nonce, $confirm_nonce_action ) ) {
+			return $this->_failed_login( $username );
+		}
+
 		// Can login, update record first.
-		$q = "UPDATE `$this->_tb` SET last_used_at=%d, count=count+1 WHERE id=%d";
+		$q = "UPDATE `$this->_tb` SET last_used_at=%d, count=count+1 WHERE id=%d AND active=1 AND last_used_at<%d";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
-		$wpdb->query( $wpdb->prepare( $q, array( $ts, $row->id ) ) );
+		$updated = $wpdb->query( $wpdb->prepare( $q, array( $ts, $row->id, $ts ) ) );
+		if ( 1 !== $updated ) {
+			exit( 'dologin_link_used' );
+		}
 
 		// Login.
+		wp_set_current_user( $user_info->ID );
 		wp_set_auth_cookie( $user_info->ID, false );
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- firing the WordPress core hook on programmatic login.
 		do_action( 'wp_login', $user_info->user_login, $user_info );
@@ -158,6 +221,83 @@ class Site extends Instance {
 		nocache_headers();
 
 		Router::redirect( admin_url() );
+	}
+
+	/**
+	 * Build the canonical easy-login assertion string.
+	 */
+	private function _easy_login_claims_json( $claims ) {
+		if ( ! is_array( $claims ) ) {
+			return false;
+		}
+		$required = array( 'v', 'uid', 'pk', 'aud', 'iat', 'jti' );
+		$keys     = array_keys( $claims );
+		sort( $keys, SORT_STRING );
+		$sorted_required = $required;
+		sort( $sorted_required, SORT_STRING );
+		if ( $keys !== $sorted_required
+			|| ! is_int( $claims['v'] ) || 2 !== $claims['v']
+			|| ! is_int( $claims['uid'] ) || $claims['uid'] <= 0
+			|| ! is_string( $claims['pk'] ) || '' === $claims['pk']
+			|| ! is_string( $claims['aud'] ) || '' === $claims['aud']
+			|| ! is_int( $claims['iat'] ) || $claims['iat'] <= 0
+			|| ! is_string( $claims['jti'] ) || ! preg_match( '/^[a-f0-9]{32}$/D', $claims['jti'] ) ) {
+			return false;
+		}
+
+		return wp_json_encode(
+			array(
+				'v'   => 2,
+				'uid' => $claims['uid'],
+				'pk'  => $claims['pk'],
+				'aud' => $claims['aud'],
+				'iat' => $claims['iat'],
+				'jti' => $claims['jti'],
+			)
+		);
+	}
+
+	/**
+	 * Decode and strictly validate a versioned easy-login token.
+	 */
+	private function _decode_easy_login_token( $raw_token ) {
+		if ( ! is_string( $raw_token ) || '' === $raw_token || strlen( $raw_token ) > 16384 ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- benign base64 decoding of the easy-login token payload.
+		$decoded = base64_decode( $raw_token, true );
+		$token   = false === $decoded ? null : json_decode( $decoded, true );
+		if ( ! is_array( $token ) || array( 'claims', 'sig' ) !== array_keys( $token ) || ! is_array( $token['claims'] ) || ! is_string( $token['sig'] ) || '' === $token['sig'] ) {
+			return false;
+		}
+		$claims_json = $this->_easy_login_claims_json( $token['claims'] );
+		if ( ! $claims_json ) {
+			return false;
+		}
+		$token['claims_json'] = $claims_json;
+		return $token;
+	}
+
+	/**
+	 * Normalize the target admin URL used as the signed token audience.
+	 */
+	private function _easy_login_audience( $url ) {
+		$url = is_string( $url ) ? esc_url_raw( $url ) : '';
+		if ( ! $url || ! wp_http_validate_url( $url ) ) {
+			return '';
+		}
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) || isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return '';
+		}
+		$scheme = strtolower( $parts['scheme'] );
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return '';
+		}
+		$host = strtolower( $parts['host'] );
+		$port = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
+		$path = isset( $parts['path'] ) ? '/' . trim( $parts['path'], '/' ) . '/' : '/';
+		return $scheme . '://' . $host . $port . $path;
 	}
 
 	/**
@@ -226,30 +366,62 @@ class Site extends Instance {
 	 */
 	public function gen_token( $uid, $return_url = false ) {
 		global $wpdb;
+		if ( ! $this->_sodium_ready() ) {
+			if ( $return_url ) {
+				return 'Sodium cryptography support is required';
+			}
+			GUI::error( __( 'Sodium cryptography support is required.', 'dologin' ) );
+			Router::redirect( admin_url( 'options-general.php?page=dologin' ) );
+		}
 
 		$this->cls( 'Data' )->tb_create( 'site' );
 
-		$uid = (int) $uid;
-		if ( $uid <= 0 ) {
+		$uid       = (int) $uid;
+		$user_info = $uid > 0 ? get_userdata( $uid ) : false;
+		if ( ! $user_info ) {
 			if ( $return_url ) {
 				return 'Invalid User ID';
 			}
 			Router::redirect( admin_url( 'options-general.php?page=dologin' ) );
 		}
 
-		$user_info = get_userdata( $uid );
-		$hash      = s::rrand( 32 );
+		$token = s::rrand( 32 );
+		$hash  = Secret::token_hash( 'site-connection', $token );
+		if ( ! $hash ) {
+			if ( $return_url ) {
+				return false;
+			}
+			wp_die( esc_html__( 'Failed to protect the site connection token.', 'dologin' ) );
+		}
 
 		$q = "INSERT INTO `$this->_tb` SET user_id = %d, user_name = %s, hash = %s, dateline = %d, active=1,is_child=1";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
-		$wpdb->query( $wpdb->prepare( $q, array( $uid, $user_info->user_login, $hash, time() ) ) );
+		$inserted = $wpdb->query( $wpdb->prepare( $q, array( $uid, $user_info->user_login, $hash, time() ) ) );
 		$id = $wpdb->insert_id;
-
-		if ( $return_url ) {
-			return admin_url( '?dologin=' . $id . '.' . $hash );
+		if ( 1 !== $inserted || $id <= 0 ) {
+			if ( $return_url ) {
+				return false;
+			}
+			wp_die( esc_html__( 'Failed to save the site connection token.', 'dologin' ) );
 		}
 
-		Router::redirect( admin_url( 'options-general.php?page=dologin' ) );
+		$link = admin_url( '?' . self::QS_NAME_ROOT_AUTH . '=' . $id . '.' . $token );
+		if ( $return_url ) {
+			return $link;
+		}
+
+		$this->show_generated_connection_token( base64_encode( $link ) );
+	}
+
+	/**
+	 * Display a newly generated connection token once without storing its raw secret.
+	 */
+	private function show_generated_connection_token( $token ) {
+		$back = admin_url( 'options-general.php?page=dologin' );
+		$message = '<p>' . esc_html__( 'Copy this child-site connection token now. For database-leak protection, its secret value is not stored and cannot be shown again.', 'dologin' ) . '</p>'
+			. '<p><code style="display:block;overflow-wrap:anywhere;padding:12px;">' . esc_html( $token ) . '</code></p>'
+			. '<p><a class="button button-primary" href="' . esc_url( $back ) . '">' . esc_html__( 'Continue to Site Connections', 'dologin' ) . '</a></p>';
+		wp_die( $message, esc_html__( 'Site Connection Token Created', 'dologin' ), array( 'response' => 200 ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- every dynamic value in the assembled admin-only message is escaped above.
 	}
 
 	/**
@@ -258,6 +430,9 @@ class Site extends Instance {
 	 * @since 4.0
 	 */
 	private function _init_pksk() {
+		if ( ! $this->_sodium_ready() ) {
+			return false;
+		}
 		if ( Conf::val( '_pk' ) && Conf::val( '_sk' ) ) {
 			return false;
 		}
@@ -268,9 +443,13 @@ class Site extends Instance {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- benign base64 encoding of an ed25519 public key.
 		$pk = base64_encode( sodium_crypto_sign_publickey( $keypair ) );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- benign base64 encoding of an ed25519 secret key.
-		$sk = base64_encode( sodium_crypto_sign_secretkey( $keypair ) );
+		$sk     = base64_encode( sodium_crypto_sign_secretkey( $keypair ) );
+		$sealed = Secret::seal( 'site-easy-login-signing-key', $sk );
+		if ( ! $sealed ) {
+			return false;
+		}
 		Conf::update( '_pk', $pk );
-		Conf::update( '_sk', $sk );
+		Conf::update( '_sk', $sealed );
 		return true;
 	}
 
@@ -282,12 +461,26 @@ class Site extends Instance {
 	 */
 	private function _pack_b64sign( $msg ) {
 		$pk = Conf::val( '_pk' );
-		$sk = Conf::val( '_sk' );
-		if ( ! $pk || ! $sk ) {
+		$stored_sk = Conf::val( '_sk' );
+		if ( ! $pk || ! $stored_sk || ! $this->_sodium_ready() ) {
 			return false;
 		}
+		if ( Secret::is_sealed( $stored_sk ) ) {
+			$sk = Secret::open( 'site-easy-login-signing-key', $stored_sk );
+		} else {
+			$sk     = (string) $stored_sk;
+			$sealed = Secret::seal( 'site-easy-login-signing-key', $sk );
+			if ( ! $sealed ) {
+				return false;
+			}
+			Conf::update( '_sk', $sealed );
+		}
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- benign base64 decoding of the stored ed25519 secret key.
-		$sign = sodium_crypto_sign( (string) $msg, base64_decode( $sk ) );
+		$secret_key = base64_decode( $sk, true );
+		if ( false === $secret_key || strlen( $secret_key ) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES ) {
+			return false;
+		}
+		$sign = sodium_crypto_sign( (string) $msg, $secret_key );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- benign base64 encoding of the signature.
 		return base64_encode( $sign );
 	}
@@ -300,7 +493,12 @@ class Site extends Instance {
 	 */
 	private function _unpack_b64sign( $msg, $pk ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- benign base64 decoding of the signed message and public key.
-		return sodium_crypto_sign_open( base64_decode( $msg ), base64_decode( $pk ) );
+		$signed     = base64_decode( $msg, true );
+		$public_key = base64_decode( $pk, true );
+		if ( ! $this->_sodium_ready() || false === $signed || false === $public_key || strlen( $public_key ) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES ) {
+			return false;
+		}
+		return sodium_crypto_sign_open( $signed, $public_key );
 	}
 
 	/**
@@ -312,6 +510,9 @@ class Site extends Instance {
 	public function connect_site() {
 		global $wpdb;
 		$this->cls( 'Data' )->tb_create( 'site' );
+		if ( ! $this->_sodium_ready() ) {
+			exit( 'Sodium cryptography support is required' );
+		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( empty( $_POST['token'] ) ) {
@@ -324,38 +525,49 @@ class Site extends Instance {
 		$this->_init_pksk();
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- admin-gated action; benign base64 decode of the connection URL token.
-		$token_link = base64_decode( sanitize_text_field( wp_unslash( $_POST['token'] ) ) );
+		$token_link = is_string( $_POST['token'] ) ? base64_decode( sanitize_text_field( wp_unslash( $_POST['token'] ) ), true ) : false;
 		// Block SSRF to internal/invalid hosts (defense in depth even though this path is manage_options-gated).
 		if ( ! wp_http_validate_url( $token_link ) ) {
 			exit( 'Invalid token URL' );
 		}
-		defined( 'debug' ) && debug( 'connection to child token link:', $token_link );
+		defined( 'debug' ) && debug( 'Validated child site connection token URL.' );
 		// Post to the child site w/ pk.
 		$pk   = Conf::val( '_pk' );
 		$ts   = time();
-		$resp = wp_remote_post(
+		$resp = wp_safe_remote_post(
 			$token_link,
 			array(
-				'body'      => array(
+				'body'                => array(
 					'pk'         => $pk,
 					'site_url'   => site_url(),
 					'site_title' => get_bloginfo( 'name' ),
 					'sign'       => $this->_pack_b64sign( $ts ),
 				),
-				'timeout'   => 15,
-				'sslverify' => true,
+				'timeout'             => 15,
+				'redirection'         => 2,
+				'limit_response_size' => 65536,
+				'sslverify'           => true,
 			)
 		);
 
 		if ( is_wp_error( $resp ) ) {
 			$error_message = $resp->get_error_message();
-			throw new \Exception( esc_html( $error_message ) );
+			GUI::error( esc_html( $error_message ) );
+			return;
 		}
 
-		$res = json_decode( $resp['body'], true );
+		if ( (int) wp_remote_retrieve_response_code( $resp ) < 200 || (int) wp_remote_retrieve_response_code( $resp ) >= 300 ) {
+			exit( 'Invalid child site response status' );
+		}
+
+		$res = json_decode( wp_remote_retrieve_body( $resp ), true );
 		defined( 'debug' ) && debug( 'child connection res:', $res );
-		if ( empty( $res['status'] ) || $res['status'] != 'ok' || empty( $res['child_title'] ) || empty( $res['child_url'] ) ) {
+		if ( empty( $res['status'] ) || 'ok' !== $res['status'] || empty( $res['child_title'] ) || ! is_scalar( $res['child_title'] ) || empty( $res['child_url'] ) || ! is_scalar( $res['child_url'] ) || ! isset( $res['child_user_id'], $res['child_user_name'] ) || ! is_scalar( $res['child_user_id'] ) || ! is_scalar( $res['child_user_name'] ) ) {
 			exit( esc_html( 'Invalid child site response: ' . $resp['body'] ) );
+		}
+		$child_url = esc_url_raw( $res['child_url'] );
+		if ( ! wp_http_validate_url( $child_url ) ) {
+			exit( 'Invalid child site URL' );
 		}
 
 		$q = "INSERT INTO `$this->_tb` SET title=%s, url=%s, pk=%s, is_child=0, user_id=%d, user_name=%s, dateline=%d, active=1";
@@ -365,11 +577,11 @@ class Site extends Instance {
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $this->_tb is a hardcoded internal table name; values are prepared.
 				$q,
 				array(
-					$res['child_title'],
-					$res['child_url'],
+					sanitize_text_field( $res['child_title'] ),
+					$child_url,
 					'-',
-					$res['child_user_id'],
-					$res['child_user_name'],
+					(int) $res['child_user_id'],
+					sanitize_text_field( $res['child_user_name'] ),
 					time(),
 				)
 			)
@@ -386,17 +598,23 @@ class Site extends Instance {
 
 		$username = 'N/A';
 
-		// This tokenized endpoint bypasses wp-login, so enforce the per-IP failure limit here too.
+		// This public handshake endpoint must apply the same IP rules and failure limits.
+		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
+			exit( 'dologin_ip_denied' );
+		}
 		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
 			exit( 'dologin_rate_limited' );
+		}
+		if ( ! $this->_sodium_ready() ) {
+			exit( 'dologin_sodium_unavailable' );
 		}
 
 		defined( 'debug' ) && debug( 'Root site connection in' );
 		// Server-to-server handshake authenticated by the signed token, not a nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$raw_token = isset( $_GET[ self::QS_NAME_ROOT_AUTH ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::QS_NAME_ROOT_AUTH ] ) ) : '';
+		$raw_token = isset( $_GET[ self::QS_NAME_ROOT_AUTH ] ) && is_string( $_GET[ self::QS_NAME_ROOT_AUTH ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::QS_NAME_ROOT_AUTH ] ) ) : '';
 		$info      = explode( '.', $raw_token );
-		if ( empty( $info[0] ) || empty( $info[1] ) ) {
+		if ( 2 !== count( $info ) || empty( $info[0] ) || empty( $info[1] ) ) {
 			return $this->_failed_login( $username );
 		}
 
@@ -412,8 +630,11 @@ class Site extends Instance {
 			return $this->_failed_login( $username );
 		}
 		$user_info = get_userdata( $row->user_id );
-		$username  = $user_info->user_login;
-		if ( $row->hash !== $info[1] ) {
+		if ( ! $user_info ) {
+			return $this->_failed_login( $username );
+		}
+		$username = $user_info->user_login;
+		if ( ! Secret::verify_token( 'site-connection', (string) $info[1], (string) $row->hash ) ) {
 			return $this->_failed_login( $username );
 		}
 		if ( $row->active != 1 || $row->is_child != 1 || $row->pk ) {
@@ -428,19 +649,20 @@ class Site extends Instance {
 
 		// Verify root site info.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$root_url = isset( $_POST['site_url'] ) ? sanitize_text_field( wp_unslash( $_POST['site_url'] ) ) : '';
+		$root_url = isset( $_POST['site_url'] ) && is_string( $_POST['site_url'] ) ? esc_url_raw( wp_unslash( $_POST['site_url'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$root_title = isset( $_POST['site_title'] ) ? sanitize_text_field( wp_unslash( $_POST['site_title'] ) ) : '';
+		$root_title = isset( $_POST['site_title'] ) && is_string( $_POST['site_title'] ) ? sanitize_text_field( wp_unslash( $_POST['site_title'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$root_pk = isset( $_POST['pk'] ) ? sanitize_text_field( wp_unslash( $_POST['pk'] ) ) : '';
+		$root_pk = isset( $_POST['pk'] ) && is_string( $_POST['pk'] ) ? sanitize_text_field( wp_unslash( $_POST['pk'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$sign = isset( $_POST['sign'] ) ? sanitize_text_field( wp_unslash( $_POST['sign'] ) ) : '';
-		if ( ! $root_url || ! $root_title || ! $root_pk || ! $sign ) {
+		$sign = isset( $_POST['sign'] ) && is_string( $_POST['sign'] ) ? sanitize_text_field( wp_unslash( $_POST['sign'] ) ) : '';
+		$root_scheme = wp_parse_url( $root_url, PHP_URL_SCHEME );
+		if ( ! $root_url || ! in_array( $root_scheme, array( 'http', 'https' ), true ) || ! $root_title || ! $root_pk || ! $sign ) {
 			defined( 'debug' ) && debug( 'Invalid dologin connect root data' );
 			exit( 'Invalid dologin connect root data' );
 		}
 		$signed_ts = $this->_unpack_b64sign( $sign, $root_pk );
-		if ( ! $signed_ts || $signed_ts < time() - 3600 ) { // Root site clock shouldn't diff more than 1 hour w/ child
+		if ( ! is_string( $signed_ts ) || ! preg_match( '/^[0-9]+$/D', $signed_ts ) || (int) $signed_ts < time() - 3600 || (int) $signed_ts > time() + 300 ) { // Root and child site clocks cannot be materially out of sync.
 			defined( 'debug' ) && debug( 'dologin connect root clock should not diff w/ child more than 1 hour' );
 			exit( 'dologin: Failed to validate timestamp. Root site clock should not diff w/ child more than 1 hour' );
 		}
@@ -457,9 +679,12 @@ class Site extends Instance {
 		}
 
 		// Can login, update record first.
-		$q = "UPDATE `$this->_tb` SET title=%s,url=%s,pk=%s WHERE id = %d";
+		$q = "UPDATE `$this->_tb` SET title=%s,url=%s,pk=%s WHERE id = %d AND pk = '' AND active = 1";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
-		$wpdb->query( $wpdb->prepare( $q, array( $root_title, $root_url, $root_pk, $pid ) ) );
+		$updated = $wpdb->query( $wpdb->prepare( $q, array( $root_title, $root_url, $root_pk, $pid ) ) );
+		if ( 1 !== $updated ) {
+			exit( 'dologin_token_used' );
+		}
 
 		nocache_headers();
 

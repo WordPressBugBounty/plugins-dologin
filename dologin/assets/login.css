@@ -22,16 +22,103 @@
 }
 
 .dologin-warn {
-	color:#e59544 !important;;
+	color:#9a5b00 !important;
 }
 
 .dologin-success {
-	color: green !important;;
+	color: green !important;
 }
 
 #dologin-process {
 	color: rgba(27, 136, 185, 0.8);
 	padding-bottom:10px;
+}
+
+.dologin-kl-sso {
+	margin: 14px 0 18px;
+	text-align: center;
+}
+
+.dologin-kl-sso-login {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	box-sizing: border-box;
+	padding: 16px;
+}
+
+.dologin-kl-brand {
+	color: #1d2327;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+
+.dologin-kl-title {
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+
+.dologin-kl-sso-login .dologin-kl-title {
+	font-size: 16px;
+	margin: 4px 0 10px;
+}
+
+.dologin-kl-qr {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	min-height: 210px;
+}
+
+.dologin-kl-qr svg {
+	background: #fff;
+	height: auto;
+	max-width: 230px;
+	width: 100%;
+}
+
+.dologin-kl-sso-login .dologin-kl-qr:empty {
+	display: none;
+}
+
+.dologin-kl-msg {
+	font-size: 12px;
+	line-height: 1.5;
+	margin: 8px auto;
+	max-width: 320px;
+}
+
+.dologin-kl-refresh {
+	margin-top: 8px !important;
+}
+
+.dologin-kl-www {
+	color: #646970;
+	font-size: 11px;
+	line-height: 1.5;
+	margin-top: 10px;
+}
+
+.dologin-kl-www a {
+	font-weight: 600;
+}
+
+.dologin-kl-unlink {
+	margin: 8px 0 0 6px !important;
+}
+
+.dologin-kl-force > p,
+.dologin-kl-force .user-pass-wrap,
+.dologin-kl-force .forgetmenot,
+.dologin-kl-force .submit {
+	display: none;
+}
+
+.dologin-kl-force .dologin-kl-sso {
+	display: block;
 }
 
 .dologin-spinner {
@@ -179,6 +266,29 @@
 td>.dologin-desc:first-child {
 	margin-top: 0px;
 	line-height: 2.24;
+}
+
+.dologin-kl-setup {
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	border-radius: 2px;
+	max-width: 800px;
+	padding: 10px 14px;
+}
+
+.dologin-kl-setup ol {
+	margin: 0 0 0 1.5em;
+}
+
+.dologin-kl-setup li {
+	line-height: 1.6;
+	margin: 3px 0;
+}
+
+.dologin-kl-link {
+	border-left: 3px solid #c3c4c7;
+	margin-top: 10px;
+	padding-left: 14px;
 }
 
 .dologin-h3 {
@@ -1137,4 +1247,3 @@ input.dologin-input-warning {
 		margin-top: 0;
 	}
 }
-

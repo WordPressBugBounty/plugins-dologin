@@ -51,6 +51,10 @@ class Lang extends Instance {
 				$msg = __( 'Empty username/password.', 'dologin' );
 				break;
 
+			case 'auth_failed':
+				$msg = __( 'Invalid username/password.', 'dologin' );
+				break;
+
 			case 'not_in_whitelist':
 				$msg = __( 'Your IP is not in the whitelist.', 'dologin' );
 				break;

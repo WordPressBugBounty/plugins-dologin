@@ -16,6 +16,7 @@ class Auth extends Instance {
 
 	private $_tb;
 	private $__data;
+	private $_application_password_user_id;
 
 	protected function __construct() {
 		$this->__data = $this->cls( 'Data' );
@@ -31,14 +32,13 @@ class Auth extends Instance {
 	public function init() {
 		add_action( 'login_head', array( $this, 'login_head' ) );
 		add_filter( 'authenticate', array( $this, 'authenticate' ), 2, 3 );
-		// Save phone number for new reg
-		add_filter( 'register_new_user', array( $this, 'register_new_user' ) );
-
+		add_filter( 'authenticate', array( $this, 'enforce_klsso' ), PHP_INT_MAX, 3 );
+		add_action( 'application_password_did_authenticate', array( $this, 'allow_application_password' ), 10, 1 );
 		// Recaptcha validation
 		add_filter( 'registration_errors', array( $this, 'registration_errors' ) );
 		add_filter( 'lostpassword_errors', array( $this, 'lostpassword_errors' ) );
 
-		if ( Conf::val( '2fa' ) ) {
+		if ( Conf::val( '2fa' ) && ! KLSso::force_enabled() ) {
 			add_filter( 'authenticate', array( $this->cls( 'TwoFA' ), 'authenticate' ), 30, 3 ); // Need to be after WP auth check
 		}
 
@@ -93,29 +93,6 @@ class Auth extends Instance {
 		}
 
 		return $errors;
-	}
-
-	/**
-	 * Save phone number
-	 *
-	 * @since 1.8
-	 * @access public
-	 */
-	public function register_new_user( $uid ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( empty( $_POST['phone_number'] ) ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$num = preg_replace( '/\D/', '', sanitize_text_field( wp_unslash( $_POST['phone_number'] ) ) );
-
-		if ( ! $num ) {
-			return;
-		}
-
-		// Save phone
-		update_user_meta( $uid, 'phone_number', $num );
 	}
 
 	/**
@@ -210,6 +187,16 @@ class Auth extends Instance {
 	}
 
 	/**
+	 * Public check for tokenized/passwordless login flows that bypass wp-login authenticate filters.
+	 *
+	 * @since  4.5
+	 * @access public
+	 */
+	public function is_ip_denied() {
+		return ! $this->try_whitelist() || $this->try_blacklist();
+	}
+
+	/**
 	 * Authenticate
 	 *
 	 * @since  1.0
@@ -226,22 +213,18 @@ class Auth extends Instance {
 			return $user;
 		}
 
-		$in_whitelist = $this->try_whitelist();
-
 		$error = new \WP_Error();
 
-		if ( ! $in_whitelist ) {
-			if ( Util::is_login_page() ) { // woo login won't check this
-				defined( 'debug' ) && debug( '❌ not_in_whitelist' );
-				$error->add( 'not_in_whitelist', Lang::msg( 'not_in_whitelist' ) );
-				define( 'DOLOGIN_ERR', true );
-			}
+		if ( ! $this->try_whitelist() ) {
+			defined( 'debug' ) && debug( '❌ not_in_whitelist' );
+			$error->add( 'not_in_whitelist', Lang::msg( 'not_in_whitelist' ) );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 		}
 
 		if ( $this->try_blacklist() ) {
 			defined( 'debug' ) && debug( '❌ in_blacklist' );
 			$error->add( 'in_blacklist', Lang::msg( 'in_blacklist' ) );
-			define( 'DOLOGIN_ERR', true );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 		}
 
 		if ( ! defined( 'DOLOGIN_ERR' ) ) {
@@ -249,7 +232,7 @@ class Auth extends Instance {
 			if ( $err_msg ) {
 				defined( 'debug' ) && debug( '❌ _has_login_err' );
 				$error->add( 'in_blacklist', $err_msg );
-				define( 'DOLOGIN_ERR', true );
+				! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 			}
 		}
 
@@ -262,7 +245,7 @@ class Auth extends Instance {
 				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
 
 				$error->add( 'captcha_err', Lang::msg( $err_code ) );
-				define( 'DOLOGIN_ERR', true );
+				! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 			}
 		}
 
@@ -276,6 +259,35 @@ class Auth extends Instance {
 		defined( 'debug' ) && debug( '✅ passed' );
 
 		return $user;
+	}
+
+	/**
+	 * Enforce QR-only login after other authentication providers run.
+	 *
+	 * @since 4.6.5
+	 */
+	public function enforce_klsso( $user, $username, $password ) {
+		if ( ! KLSso::force_enabled() ) {
+			return $user;
+		}
+		if ( $user instanceof \WP_User && (int) $user->ID === (int) $this->_application_password_user_id ) {
+			return $user;
+		}
+
+		$error = new \WP_Error();
+		$error->add( 'kl_sso_required', __( 'KeyLockr SSO login is required.', 'dologin' ) );
+		return $error;
+	}
+
+	/**
+	 * Record the user authenticated by a WordPress Application Password for this request.
+	 *
+	 * @since 4.6.5
+	 */
+	public function allow_application_password( $user ) {
+		if ( $user instanceof \WP_User ) {
+			$this->_application_password_user_id = (int) $user->ID;
+		}
 	}
 
 	/**
@@ -333,6 +345,11 @@ class Auth extends Instance {
 
 		$ip = IP::me();
 
+		// Do not trigger external GeoIP requests after the record limit is reached.
+		if ( $this->_has_login_err( false, 10 ) ) {
+			return;
+		}
+
 		// Parse Geo info
 		$ip_geo_list = IP::geo( $ip );
 		unset( $ip_geo_list['ip'] );
@@ -356,13 +373,9 @@ class Auth extends Instance {
 			$gateway = 'XMLRPC';
 		}
 
-		// If the are more than limited, bypass log
-		$err_msg = $this->_has_login_err( false, 10 );
-		if ( ! $err_msg ) {
-			$q = "INSERT INTO `$this->_tb` SET ip = %s, ip_geo = %s, username = %s, gateway = %s, dateline = %s";
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
-			$wpdb->query( $wpdb->prepare( $q, array( $ip, $ip_geo, $user, $gateway, time() ) ) );
-		}
+		$q = "INSERT INTO `$this->_tb` SET ip = %s, ip_geo = %s, username = %s, gateway = %s, dateline = %s";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
+		$wpdb->query( $wpdb->prepare( $q, array( $ip, $ip_geo, $user, $gateway, time() ) ) );
 	}
 
 	/**

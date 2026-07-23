@@ -219,6 +219,10 @@ class Util extends Instance {
 	public static function uninstall() {
 		self::version_check( 'uninstall' );
 
+		if ( is_multisite() ) {
+			self::run_for_sites( 'delete_tables' );
+			return;
+		}
 		Data::cls()->tables_del();
 	}
 
@@ -228,11 +232,84 @@ class Util extends Instance {
 	 * @since  1.2.2
 	 * @access public
 	 */
-	public static function activate() {
+	public static function activate( $network_wide = false ) {
 		if ( ! defined( 'SILENCE_INSTALL' ) ) {
 			set_transient( 'dologin_activation_redirect', true, 30 );
 		}
 
+		if ( is_multisite() && $network_wide ) {
+			self::run_for_sites( 'create_tables' );
+			return;
+		}
 		Data::cls()->tables_create();
+	}
+
+	/**
+	 * Provision plugin tables for a newly created site during network activation.
+	 *
+	 * @since 4.6.5
+	 */
+	public static function new_site( $site ) {
+		if ( ! is_multisite() || ! self::is_network_active() ) {
+			return;
+		}
+		$site_id = is_object( $site ) && isset( $site->blog_id ) ? (int) $site->blog_id : (int) $site;
+		if ( $site_id > 0 ) {
+			self::run_for_site( $site_id, 'create_tables' );
+		}
+	}
+
+	/**
+	 * Run table lifecycle operations on every site in a multisite network.
+	 */
+	private static function run_for_sites( $operation ) {
+		$site_ids = array();
+		if ( function_exists( 'get_sites' ) ) {
+			$site_ids = get_sites(
+				array(
+					'fields' => 'ids',
+					'number' => 0,
+				)
+			);
+		} elseif ( function_exists( 'wp_get_sites' ) ) {
+			$legacy_sites = wp_get_sites( array( 'limit' => 0 ) );
+			foreach ( $legacy_sites as $legacy_site ) {
+				if ( isset( $legacy_site['blog_id'] ) ) {
+					$site_ids[] = (int) $legacy_site['blog_id'];
+				}
+			}
+		}
+
+		foreach ( $site_ids as $site_id ) {
+			self::run_for_site( (int) $site_id, $operation );
+		}
+	}
+
+	/**
+	 * Safely switch site context and run a table lifecycle operation.
+	 */
+	private static function run_for_site( $site_id, $operation ) {
+		$switched = is_multisite() && (int) get_current_blog_id() !== (int) $site_id;
+		if ( $switched ) {
+			switch_to_blog( $site_id );
+		}
+		if ( 'delete_tables' === $operation ) {
+			Data::cls()->tables_del();
+		} else {
+			Data::cls()->tables_create();
+		}
+		if ( $switched ) {
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * Check network activation without assuming admin helper functions are loaded.
+	 */
+	private static function is_network_active() {
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		return is_plugin_active_for_network( plugin_basename( DOLOGIN_DIR . 'dologin.php' ) );
 	}
 }

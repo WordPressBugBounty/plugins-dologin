@@ -9,6 +9,7 @@ defined( 'WPINC' ) || exit;
 $dologin_php_files = array(
 	// core file priority
 	'src/instance.cls.php',
+	'src/secret.cls.php',
 
 	// main src files
 	'src/admin.cls.php',
@@ -22,13 +23,19 @@ $dologin_php_files = array(
 	'src/gui.cls.php',
 	'src/installer.cls.php',
 	'src/ip.cls.php',
+	'src/klsso-msgpack.cls.php',
+	'src/klsso-keys.cls.php',
+	'src/klsso-protocol.cls.php',
+	'src/klsso-repair.cls.php',
+	'src/klsso-state.cls.php',
+	'src/klsso-ui.cls.php',
+	'src/klsso.cls.php',
 	'src/lang.cls.php',
 	'src/pswdless.cls.php',
 	'src/rest.cls.php',
 	'src/router.cls.php',
 	'src/s.cls.php',
 	'src/site.cls.php',
-	'src/sms.cls.php',
 	'src/twofa.cls.php',
 	'src/util.cls.php',
 );

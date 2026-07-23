@@ -27,7 +27,7 @@ class Two_FA_Lib {
 
 		// Valid secret lengths are 80 to 640 bits
 		if ( $secretLength < 16 || $secretLength > 128 ) {
-			throw new Exception( 'Bad secret length' );
+			throw new \Exception( 'Bad secret length' );
 		}
 		$secret = '';
 		$rnd    = false;
@@ -46,7 +46,7 @@ class Two_FA_Lib {
 				$secret .= $validChars[ ord( $rnd[ $i ] ) & 31 ];
 			}
 		} else {
-			throw new Exception( 'No source of secure random' );
+			throw new \Exception( 'No source of secure random' );
 		}
 
 		return $secret;
@@ -121,8 +121,22 @@ class Two_FA_Lib {
 	 * @return bool
 	 */
 	public function verifyCode( $secret, $code, $discrepancy = 1, $currentTimeSlice = null ) {
+		return false !== $this->findValidTimeSlice( $secret, $code, $discrepancy, $currentTimeSlice );
+	}
+
+	/**
+	 * Return the matched time slice so callers can block TOTP replay.
+	 *
+	 * @param string   $secret
+	 * @param string   $code
+	 * @param int      $discrepancy
+	 * @param int|null $currentTimeSlice
+	 *
+	 * @return int|false
+	 */
+	public function findValidTimeSlice( $secret, $code, $discrepancy = 1, $currentTimeSlice = null ) {
 		if ( $currentTimeSlice === null ) {
-			$currentTimeSlice = floor( time() / 30 );
+			$currentTimeSlice = (int) floor( time() / 30 );
 		}
 
 		if ( strlen( $code ) != 6 ) {
@@ -130,9 +144,10 @@ class Two_FA_Lib {
 		}
 
 		for ( $i = -$discrepancy; $i <= $discrepancy; ++$i ) {
-			$calculatedCode = $this->getCode( $secret, $currentTimeSlice + $i );
+			$matched_slice  = (int) $currentTimeSlice + $i;
+			$calculatedCode = $this->getCode( $secret, $matched_slice );
 			if ( $this->timingSafeEquals( $calculatedCode, $code ) ) {
-				return true;
+				return $matched_slice;
 			}
 		}
 

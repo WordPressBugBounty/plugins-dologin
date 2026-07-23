@@ -48,35 +48,64 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		});
 	});
 
-	$( '#dologin_test_sms' ).click( function( e ) {
-		$.ajax( {
-			url: dologin_admin.url_test_sms,
-			type: 'POST',
-			dataType: 'json',
-			data: {
-				phone: dologin_admin.current_user_phone
-			},
-			success: function( res ) {
-				if ( res._res !== 'ok' ) {
-					$( '#dologin_test_sms_res' ).attr( 'class', 'dologin-danger' ).html( res._msg );
-				} else {
-					$( '#dologin_test_sms_res' ).attr( 'class', 'dologin-success' ).html( res.info );
-				}
-			}
-		} );
-	} );
-
 	$( '#dologin_get_ip' ).click( function( e ) {
+		e.preventDefault();
+		var $button = $( this );
+		var $status = $( '#dologin_mygeolocation' );
+		$button.prop( 'disabled', true ).attr( 'aria-busy', 'true' );
+		$status.attr( 'class', 'dologin-warn' ).text( dologin_admin.ip_lookup_progress );
 		$.ajax( {
 			url: dologin_admin.url_myip,
 			dataType: 'json',
-			success: function( data ) {
-				var html = [];
-				$.each( data, function( k, v ) {
-					 html.push( k + ':' + v );
-				});
-				$( '#dologin_mygeolocation' ).html( html.join( ', ' ) );
+			headers: {
+				'X-WP-Nonce': dologin_admin.nonce
 			}
+		} ).done( function( data ) {
+			var html = [];
+			$.each( data, function( k, v ) {
+				html.push( k + ':' + v );
+			} );
+			$status.attr( 'class', '' ).text( html.join( ', ' ) );
+		} ).fail( function() {
+			$status.attr( 'class', 'dologin-danger' ).text( dologin_admin.ip_lookup_failed );
+		} ).always( function() {
+			$button.prop( 'disabled', false ).removeAttr( 'aria-busy' );
+		} );
+	} );
+
+	$( '.dologin-kl-reset-keys' ).click( function() {
+		if ( ! window.confirm( dologin_admin.reset_keys_confirm ) ) {
+			return;
+		}
+		var $button = $( this );
+		var $status = $( '.dologin-kl-site-key-status' );
+		$button.prop( 'disabled', true );
+		$status.attr( 'class', 'dologin-kl-site-key-status dologin-warn' ).text( dologin_admin.resetting_keys );
+		$.ajax( {
+			url: dologin_admin.url_kl_reset_keys,
+			method: 'POST',
+			dataType: 'json',
+			headers: {
+				'X-WP-Nonce': dologin_admin.nonce
+			}
+		} ).done( function( data ) {
+			if ( ! data || data._res !== 'ok' ) {
+				$status.attr( 'class', 'dologin-kl-site-key-status dologin-danger' ).text( data && data._msg ? data._msg : dologin_admin.reset_keys_failed );
+				return;
+			}
+			$( '#dologin-kl-site-key-fingerprint' ).text( data.fingerprint );
+			$status.attr( 'class', 'dologin-kl-site-key-status dologin-success' ).text( data.message );
+			if ( $( '.dologin-kl-account' ).length && data.binding_message ) {
+				var $note = $( '.dologin-kl-key-note' );
+				if ( !$note.length ) {
+					$note = $( '<div>' ).addClass( 'dologin-warn dologin-kl-key-note' ).insertAfter( '.dologin-kl-account' );
+				}
+				$note.text( data.binding_message );
+			}
+		} ).fail( function() {
+			$status.attr( 'class', 'dologin-kl-site-key-status dologin-danger' ).text( dologin_admin.reset_keys_failed );
+		} ).always( function() {
+			$button.prop( 'disabled', false );
 		} );
 	} );
 

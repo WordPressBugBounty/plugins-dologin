@@ -13,10 +13,24 @@ class Data extends Instance {
 		'1.4.1' => array(
 			'dologin_update_1_4_1',
 		),
+		'4.0'   => array(
+			'dologin_update_4_0_0',
+		),
+		'4.5'   => array(
+			'dologin_update_4_5_0',
+		),
+		'4.6'   => array(
+			'dologin_update_4_6_0',
+		),
+		'4.7.4' => array(
+			'dologin_update_4_7_4',
+		),
+		'4.7.5' => array(
+			'dologin_update_4_7_5',
+		),
 	);
 
 	const TB_FAILURE  = 'dologin_failure';
-	const TB_SMS      = 'dologin_sms';
 	const TB_PSWDLESS = 'dologin_pswdless';
 	const TB_SITE     = 'dologin_site';
 
@@ -38,6 +52,9 @@ class Data extends Instance {
 			}
 		}
 
+		// Repair tables that may be missing after an older or multisite activation.
+		$this->tables_create();
+
 		Conf::delete( '_ver' );
 		Conf::add( '_ver', Core::VER );
 
@@ -56,9 +73,6 @@ class Data extends Instance {
 		switch ( $tb ) {
 			case 'failure':
 				return $wpdb->prefix . self::TB_FAILURE;
-
-			case 'sms':
-				return $wpdb->prefix . self::TB_SMS;
 
 			case 'pswdless':
 				return $wpdb->prefix . self::TB_PSWDLESS;
@@ -152,7 +166,6 @@ class Data extends Instance {
 		global $wpdb;
 
 		$this->tb_create( 'failure' );
-		$this->tb_create( 'sms' );
 		$this->tb_create( 'pswdless' );
 		$this->tb_create( 'site' );
 	}
@@ -167,7 +180,6 @@ class Data extends Instance {
 		global $wpdb;
 
 		$this->tb_del( 'failure' );
-		$this->tb_del( 'sms' );
 		$this->tb_del( 'pswdless' );
 		$this->tb_del( 'site' );
 	}

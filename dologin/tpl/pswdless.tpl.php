@@ -10,6 +10,9 @@ namespace dologin;
 defined( 'WPINC' ) || exit;
 
 ?>
+<?php if ( KLSso::force_enabled() ) : ?>
+	<div class="notice notice-warning inline"><p><?php esc_html_e( 'Force KeyLockr SSO is enabled. Passwordless links remain manageable here but cannot be used to log in.', 'dologin' ); ?></p></div>
+<?php endif; ?>
 <div class="dologin-relative">
 	<h3 class="dologin-title-short">
 		<?php esc_html_e( 'Passwordless Login', 'dologin' ); ?>
@@ -41,7 +44,7 @@ defined( 'WPINC' ) || exit;
 			<td><?php echo (int) $dologin_v->id; ?></td>
 			<td><?php echo esc_html( Util::readable_time( $dologin_v->dateline ) ); ?></td>
 			<td><?php echo esc_html( $dologin_v->username ); ?></td>
-			<td><span class="dologin_pswd_link dologin_tt dologin_tt--success" data-title="<?php esc_attr_e( 'Click to copy', 'dologin' ); ?>"><?php echo esc_url( $dologin_v->link ); ?></span></td>
+			<td><span class="description"><?php esc_html_e( 'Secret not stored. Generate a new link to copy it again.', 'dologin' ); ?></span></td>
 			<td><?php echo esc_html( $dologin_v->src ); ?></td>
 			<td><?php echo (int) $dologin_v->count; ?></td>
 			<td><?php echo $dologin_v->last_used_at ? esc_html( Util::readable_time( $dologin_v->last_used_at ) ) : '-'; ?></td>

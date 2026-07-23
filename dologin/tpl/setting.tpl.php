@@ -11,8 +11,10 @@ defined( 'WPINC' ) || exit;
 
 $dologin_gui = $this->cls( 'GUI' );
 
-$dologin_current_user_phone = $this->cls( 'SMS' )->current_user_phone();
-$dologin_current_user_2fa   = $this->cls( 'TwoFA' )->current_status();
+$dologin_current_user_2fa = $this->cls( 'TwoFA' )->current_status();
+$dologin_kl_requirements  = KLSso::requirements();
+$dologin_kl_server_ips    = KLSso::server_ips();
+$dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 
 ?>
 <form method="post" action="<?php echo esc_url( menu_page_url( 'dologin', false ) ); ?>" class="dologin-relative">
@@ -87,49 +89,81 @@ $dologin_current_user_2fa   = $this->cls( 'TwoFA' )->current_status();
 		</tbody>
 	</table>
 
-	<h3 class="dologin-hide"><?php esc_html_e( 'Short Code Auth Settings', 'dologin' ); ?></h3>
+	<h3 class="dologin-title-short"><?php esc_html_e( 'KeyLockr SSO Settings', 'dologin' ); ?></h3>
 
-	<table class="dologin-hide wp-list-table striped dologin-table">
+	<table class="wp-list-table striped dologin-table">
 		<tbody>
 			<tr>
-				<th><?php esc_html_e( 'Two Step SMS Auth', 'dologin' ); ?></th>
+				<th><?php esc_html_e( 'App Tag', 'dologin' ); ?></th>
 				<td>
-					<?php $dologin_gui->build_switch( 'sms' ); ?>
+					<?php $dologin_gui->build_input( 'kl_sso_svc_id' ); ?>
 					<div class="dologin-desc">
-						<?php esc_html_e( 'Verify text code for each login attempt.', 'dologin' ); ?>
-						<?php esc_html_e( 'Users need to setup the Dologin Phone number in their profile.', 'dologin' ); ?>
-						<?php esc_html_e( 'The phone number need to specify the coutry calling codes.', 'dologin' ); ?>
-						<?php
-						echo wp_kses_post(
-							sprintf(
-								/* translators: %s: DoAPI.us service link. */
-								__( 'Text message is sent by API from %s.', 'dologin' ),
-								'<a href="https://www.doapi.us" target="_blank">DoAPI.us</a>'
-							)
-						);
-						?>
+						<?php esc_html_e( 'Copy the effective App Tag from KeyLockr. If no custom App Tag is set, use the decimal Service ID.', 'dologin' ); ?>
+					</div>
+					<div class="dologin-desc dologin-kl-setup">
+						<strong><?php esc_html_e( 'Quick Setup', 'dologin' ); ?></strong>
+						<ol>
+							<li>
+								<a href="<?php echo esc_url( KLSso::DEVELOPER_ADD_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Create a KeyLockr SSO service', 'dologin' ); ?></a>.
+								<?php esc_html_e( 'Keep App Data Storage enabled and add these Server IPs:', 'dologin' ); ?>
+								<?php if ( $dologin_kl_server_ips ) : ?>
+									<?php foreach ( $dologin_kl_server_ips as $dologin_kl_server_ip ) : ?>
+										<code><?php echo esc_html( $dologin_kl_server_ip ); ?></code>
+									<?php endforeach; ?>
+								<?php else : ?>
+									<span class="dologin-warn"><?php esc_html_e( 'Automatic detection failed. Enter this server outbound public IP in KeyLockr manually and reload in a few minutes to retry.', 'dologin' ); ?></span>
+								<?php endif; ?>
+							</li>
+							<li><?php esc_html_e( 'Paste the effective App Tag above and save these settings.', 'dologin' ); ?></li>
+							<li><?php esc_html_e( 'Link this WordPress account, enable SSO login, and test it before forcing QR-only login.', 'dologin' ); ?></li>
+						</ol>
+						<?php if ( $dologin_kl_requirements ) : ?>
+							<div class="dologin-warning-h3">
+								<?php echo esc_html( implode( ' ', $dologin_kl_requirements ) ); ?>
+							</div>
+						<?php endif; ?>
+					</div>
+					<div class="dologin-desc dologin-kl-site-keys">
+						<strong><?php esc_html_e( 'Site Key Fingerprint', 'dologin' ); ?>:</strong>
+						<?php if ( is_wp_error( $dologin_kl_fingerprint ) ) : ?>
+							<code id="dologin-kl-site-key-fingerprint"><?php esc_html_e( 'Unavailable', 'dologin' ); ?></code>
+							<span class="dologin-kl-site-key-status dologin-danger"><?php echo esc_html( $dologin_kl_fingerprint->get_error_message() ); ?></span>
+						<?php else : ?>
+							<code id="dologin-kl-site-key-fingerprint"><?php echo esc_html( $dologin_kl_fingerprint ); ?></code>
+							<span class="dologin-kl-site-key-status" aria-live="polite"></span>
+						<?php endif; ?>
+						<button type="button" class="button dologin-kl-reset-keys" <?php disabled( KLSso::force_enabled() ); ?>><?php esc_html_e( 'Reset Site Keys', 'dologin' ); ?></button>
+						<p><?php esc_html_e( 'The signing key keeps this WordPress site on one KeyLockr connection identity, while every handshake uses a fresh encryption key. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login.', 'dologin' ); ?></p>
+						<?php if ( KLSso::force_enabled() ) : ?>
+							<p class="dologin-warn"><?php esc_html_e( 'Disable Force KeyLockr SSO before resetting the site keys.', 'dologin' ); ?></p>
+						<?php endif; ?>
 					</div>
 				</td>
 			</tr>
 
 			<tr>
-				<th><?php esc_html_e( 'Force SMS Auth Validation', 'dologin' ); ?></th>
+				<th><?php esc_html_e( 'KeyLockr SSO Login', 'dologin' ); ?></th>
 				<td>
-					<?php $dologin_gui->build_switch( 'sms_force' ); ?>
+					<?php $dologin_gui->build_switch( 'kl_sso' ); ?>
 					<div class="dologin-desc">
-						<?php esc_html_e( 'If enabled this, any user without phone set in profile will not be able to login.', 'dologin' ); ?>
-						<a href="profile.php"><?php esc_html_e( 'Click here to set your Dologin Security phone number', 'dologin' ); ?></a>
-						<?php if ( ! $dologin_current_user_phone && Conf::val( 'sms' ) && Conf::val( 'sms_force' ) ) : ?>
-							<div class="dologin-warning-h3">
-								<?php esc_html_e( 'You need to setup your Dologin Phone number before enabling this setting to avoid yourself being blocked from next time login.', 'dologin' ); ?>
-							</div>
-						<?php else : ?>
+						<?php esc_html_e( 'Show KeyLockr QR login and verify both app_verify and the encrypted appdata hash.', 'dologin' ); ?>
+						<div class="dologin-kl-link">
+							<strong><?php esc_html_e( 'Link Current Account', 'dologin' ); ?></strong>
+							<?php $this->cls( 'KLSso' )->bind_form(); ?>
+							<?php if ( empty( KLSso::current_user_status()['bound'] ) ) : ?>
+								<p><?php esc_html_e( 'Unlock KeyLockr on your phone when prompted. The account is linked only after app data is written and read back successfully.', 'dologin' ); ?></p>
+							<?php endif; ?>
+						</div>
 					</div>
+				</td>
+			</tr>
+
+			<tr>
+				<th><?php esc_html_e( 'Force KeyLockr SSO', 'dologin' ); ?></th>
+				<td>
+					<?php $dologin_gui->build_switch( 'kl_sso_force' ); ?>
 					<div class="dologin-desc">
-						<button type="button" class="button button-primary" id="dologin_test_sms"><?php esc_html_e( 'Test SMS message', 'dologin' ); ?></button>
-						<span id='dologin_test_sms_res'></span>
-							<?php esc_html_e( 'This will send a test text message to your phone number.', 'dologin' ); ?>
-					<?php endif; ?>
+						<?php esc_html_e( 'Hide the password form and allow only KeyLockr QR login. DoLogin enables this only after the current administrator has a verified binding for the saved App Tag and site keys. Once enabled, failures never restore other login methods; rename the plugin folder through FTP or the hosting file manager if external recovery is required.', 'dologin' ); ?>
 					</div>
 				</td>
 			</tr>

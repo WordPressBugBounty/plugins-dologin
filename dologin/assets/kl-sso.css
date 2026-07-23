@@ -1,0 +1,132 @@
+.dologin-kl-sso-admin {
+	font-size: 13px;
+	max-width: 680px;
+	text-align: left;
+}
+
+.dologin-kl-account {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-top: 10px;
+}
+
+.dologin-kl-account-main {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.dologin-kl-account-main .button,
+.dologin-kl-danger-actions .button {
+	margin: 0 !important;
+}
+
+.dologin-kl-danger-actions {
+	margin-left: auto;
+}
+
+.dologin-kl-danger-actions .dologin-kl-unlink.button,
+.dologin-kl-reset-keys.button {
+	background: #b32d2e;
+	border-color: #8a2424;
+	color: #fff;
+}
+
+.dologin-kl-danger-actions .dologin-kl-unlink.button:focus,
+.dologin-kl-danger-actions .dologin-kl-unlink.button:hover,
+.dologin-kl-reset-keys.button:focus,
+.dologin-kl-reset-keys.button:hover {
+	background: #8a2424;
+	border-color: #691b1b;
+	color: #fff;
+}
+
+.dologin-kl-danger-actions .dologin-kl-unlink.button:focus,
+.dologin-kl-reset-keys.button:focus {
+	box-shadow: 0 0 0 1px #fff, 0 0 0 3px #b32d2e;
+	outline: 2px solid transparent;
+}
+
+.dologin-kl-site-keys {
+	margin-top: 14px;
+}
+
+.dologin-kl-site-keys .dologin-kl-reset-keys {
+	margin-left: 10px;
+}
+
+.dologin-kl-site-key-status {
+	display: inline-block;
+	margin-left: 8px;
+}
+
+.dologin-kl-pairing {
+	align-items: center;
+	display: grid;
+	gap: 24px;
+	grid-template-columns: minmax(180px, 230px) minmax(180px, 1fr);
+	margin-top: 12px;
+	max-width: 640px;
+}
+
+.dologin-kl-pairing[hidden] {
+	display: none;
+}
+
+.dologin-kl-pairing .dologin-kl-qr:empty {
+	min-height: 0;
+}
+
+.dologin-kl-pairing-controls {
+	align-items: flex-start;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-width: 0;
+}
+
+.dologin-kl-pairing-controls .dologin-kl-msg {
+	margin: 0;
+	text-align: left;
+}
+
+.dologin-kl-pairing-controls .dologin-kl-refresh {
+	margin-top: 0 !important;
+}
+
+.dologin-kl-force-note {
+	margin-top: 10px;
+}
+
+.dologin-kl-key-note {
+	margin-top: 10px;
+}
+
+@media screen and (max-width: 680px) {
+	.dologin-kl-account {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.dologin-kl-danger-actions {
+		margin-left: 0;
+		margin-top: 6px;
+	}
+
+	.dologin-kl-pairing {
+		gap: 10px;
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 100%;
+	}
+
+	.dologin-kl-pairing-controls {
+		align-items: center;
+	}
+
+	.dologin-kl-pairing-controls .dologin-kl-msg {
+		text-align: center;
+	}
+}

@@ -114,7 +114,7 @@ class Router extends Instance {
 	 * @since  1.4
 	 */
 	private function verify_action() {
-		if ( empty( $_REQUEST[ self::ACTION ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() below.
+		if ( empty( $_REQUEST[ self::ACTION ] ) || ! is_string( $_REQUEST[ self::ACTION ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() below.
 			return;
 		}
 
@@ -124,14 +124,17 @@ class Router extends Instance {
 			return;
 		}
 
-		$_can_option = current_user_can( 'manage_options' );
-
 		switch ( $action ) {
 			case self::ACTION_SITE:
 			case self::ACTION_PSWD:
 			case self::ACTION_AUTH:
+				if ( current_user_can( 'manage_options' ) ) {
+					self::$_action = $action;
+				}
+				return;
+
 			case self::ACTION_INSTALLER:
-				if ( $_can_option ) {
+				if ( current_user_can( 'install_plugins' ) && current_user_can( 'activate_plugins' ) && ( ! is_multisite() || is_super_admin() ) ) {
 					self::$_action = $action;
 				}
 				return;
@@ -148,7 +151,7 @@ class Router extends Instance {
 	 * @since  1.4
 	 */
 	private function verify_nonce( $action ) {
-		if ( ! isset( $_REQUEST[ self::NONCE ] ) ) {
+		if ( ! isset( $_REQUEST[ self::NONCE ] ) || ! is_string( $_REQUEST[ self::NONCE ] ) ) {
 			return false;
 		}
 
@@ -166,7 +169,7 @@ class Router extends Instance {
 	 * @access public
 	 */
 	public static function verify_type() {
-		if ( empty( $_REQUEST[ self::TYPE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
+		if ( empty( $_REQUEST[ self::TYPE ] ) || ! is_string( $_REQUEST[ self::TYPE ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified by verify_nonce() during action dispatch.
 			defined( 'debug' ) && debug( 'no type', 2 );
 			return false;
 		}

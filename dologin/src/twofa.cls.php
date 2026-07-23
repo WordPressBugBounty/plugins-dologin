@@ -20,10 +20,10 @@ class TwoFA extends Instance {
 	 * @since 3.5
 	 */
 	public function maybe_save_2fa() {
-		if ( empty( $_POST['dologin-2fa-code'] ) ) {
+		if ( empty( $_POST['dologin-2fa-code'] ) || ! is_string( $_POST['dologin-2fa-code'] ) ) {
 			return;
 		}
-		if ( empty( $_POST['dologin-2fa-secret'] ) ) {
+		if ( empty( $_POST['dologin-2fa-secret'] ) || ! is_string( $_POST['dologin-2fa-secret'] ) ) {
 			return;
 		}
 		check_admin_referer( 'dologin-set2fa' );
@@ -44,7 +44,11 @@ class TwoFA extends Instance {
 		}
 
 		$uid = get_current_user_id();
-		update_user_meta( $uid, '2fa', $secret );
+		$sealed = Secret::seal( 'totp-user-secret', $secret );
+		if ( ! $sealed || false === update_user_meta( $uid, '2fa', $sealed ) ) {
+			GUI::error( __( 'Failed to encrypt the 2FA secret. The secret was not saved.', 'dologin' ) );
+			return;
+		}
 
 		GUI::succeed( __( 'Congratulations! Your 2FA is successfully enabled!', 'dologin' ) );
 
@@ -95,7 +99,7 @@ class TwoFA extends Instance {
 	public function current_status() {
 		$uid  = get_current_user_id();
 		$code = get_user_meta( $uid, '2fa', true );
-		return $code;
+		return (bool) $code;
 	}
 
 	/**
@@ -136,22 +140,33 @@ class TwoFA extends Instance {
 		}
 
 		// If 2fa is optional and the user doesn't have phone set, bypass.
-		$code = get_user_meta( $user->ID, '2fa', true );
-		if ( ! $code ) {
+		$code = $this->user_secret( $user->ID );
+		if ( null === $code ) {
 			defined( 'debug' ) && debug( 'no 2fa set' );
 			if ( ! Conf::val( '2fa_force' ) ) {
 				defined( 'debug' ) && debug( 'bypassed due to no force_2fa check' );
 				return $user;
 			}
+
+			$error = new \WP_Error();
+			$error->add( 'not_2fa_set_user', Lang::msg( 'not_2fa_set_user' ) );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
+			return $error;
+		}
+		if ( false === $code ) {
+			$error = new \WP_Error();
+			$error->add( 'twofa_secret_unavailable', __( 'The stored 2FA secret cannot be decrypted. Restore the WordPress authentication salts or reset this user\'s 2FA secret.', 'dologin' ) );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
+			return $error;
 		}
 
 		$error = new \WP_Error();
 
 		// Validate dynamic code.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( empty( $_POST['dologin-two_factor_code'] ) ) {
+		if ( empty( $_POST['dologin-two_factor_code'] ) || ! is_string( $_POST['dologin-two_factor_code'] ) ) {
 			$error->add( 'dynamic_code_missing', Lang::msg( 'dynamic_code_missing' ) );
-			define( 'DOLOGIN_ERR', true );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 			defined( 'debug' ) && debug( '❌ 2fa missing' );
 			return $error;
 		}
@@ -159,17 +174,87 @@ class TwoFA extends Instance {
 		$lib = new lib\Two_FA_Lib();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$submitted_code = sanitize_text_field( wp_unslash( $_POST['dologin-two_factor_code'] ) );
-		$res            = $lib->verifyCode( $code, $submitted_code, 1 );
-		if ( ! $res ) {
+		$matched_slice  = $lib->findValidTimeSlice( $code, $submitted_code, 1 );
+		if ( false === $matched_slice ) {
 			$error->add( 'dynamic_code_wrong', Lang::msg( 'dynamic_code_wrong' ) );
-			define( 'DOLOGIN_ERR', true );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
 			defined( 'debug' ) && debug( '❌ 2fa wrong' );
+			return $error;
+		}
+
+		// Remember the secret fingerprint and latest time slice to prevent TOTP replay within the valid window.
+		$fingerprint = hash( 'sha256', (string) $code );
+		if ( ! $this->consume_time_slice( $user->ID, $fingerprint, $matched_slice ) ) {
+			$error->add( 'dynamic_code_wrong', Lang::msg( 'dynamic_code_wrong' ) );
+			! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );
+			defined( 'debug' ) && debug( '❌ 2fa replayed' );
 			return $error;
 		}
 
 		defined( 'debug' ) && debug( '✅ auth successfully' );
 
 		return $user;
+	}
+
+	/**
+	 * Atomically consume a TOTP time slice with an option-value compare-and-swap.
+	 */
+	private function consume_time_slice( $user_id, $fingerprint, $time_slice ) {
+		global $wpdb;
+
+		$option_name = 'dologin.2fa.last.' . (int) $user_id;
+		$new_value   = $fingerprint . ':' . (int) $time_slice;
+		for ( $attempt = 0; $attempt < 2; $attempt++ ) {
+			$current = (string) get_option( $option_name, '' );
+			$parts   = explode( ':', $current, 2 );
+			if ( 2 === count( $parts ) && hash_equals( $fingerprint, $parts[0] ) && (int) $time_slice <= (int) $parts[1] ) {
+				return false;
+			}
+			if ( '' === $current ) {
+				if ( add_option( $option_name, $new_value, '', false ) ) {
+					return true;
+				}
+				wp_cache_delete( $option_name, 'options' );
+				continue;
+			}
+
+			$q = "UPDATE `$wpdb->options` SET option_value = %s WHERE option_name = %s AND option_value = %s";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery -- Per-user replay markers require an atomic compare-and-swap.
+			$updated = $wpdb->query( $wpdb->prepare( $q, $new_value, $option_name, $current ) );
+			wp_cache_delete( $option_name, 'options' );
+			if ( 1 === $updated ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Read and, when necessary, migrate one user's encrypted TOTP secret.
+	 *
+	 * @return string|null|false Plain secret, null when missing, or false when unavailable.
+	 */
+	private function user_secret( $user_id ) {
+		$stored = get_user_meta( (int) $user_id, '2fa', true );
+		if ( ! is_string( $stored ) || '' === $stored ) {
+			return null;
+		}
+		if ( Secret::is_sealed( $stored ) ) {
+			$plain = Secret::open( 'totp-user-secret', $stored );
+			return is_string( $plain ) && '' !== $plain ? $plain : false;
+		}
+
+		$sealed = Secret::seal( 'totp-user-secret', $stored );
+		if ( ! $sealed || false === update_user_meta( (int) $user_id, '2fa', $sealed, $stored ) ) {
+			$latest = get_user_meta( (int) $user_id, '2fa', true );
+			if ( is_string( $latest ) && Secret::is_sealed( $latest ) ) {
+				$plain = Secret::open( 'totp-user-secret', $latest );
+				return is_string( $plain ) && '' !== $plain ? $plain : false;
+			}
+			return false;
+		}
+		return $stored;
 	}
 
 	/**
@@ -182,6 +267,13 @@ class TwoFA extends Instance {
 			return REST::ok( array( 'bypassed' => 1 ) );
 		}
 
+		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
+			return REST::err( __( 'This IP is not allowed to login.', 'dologin' ) );
+		}
+		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
+			return REST::err( Lang::msg( 'max_retries_hit' ) );
+		}
+
 		$field_u = 'log';
 		$field_p = 'pwd';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -191,30 +283,59 @@ class TwoFA extends Instance {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		if ( empty( $_POST[ $field_u ] ) || empty( $_POST[ $field_p ] ) ) {
+		if ( empty( $_POST[ $field_u ] ) || ! is_string( $_POST[ $field_u ] ) || empty( $_POST[ $field_p ] ) || ! is_string( $_POST[ $field_p ] ) ) {
 			return REST::err( Lang::msg( 'empty_u_p' ) );
 		}
 
+		// Password contents must not be sanitized, but WordPress-added slashes must be removed.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$username = wp_unslash( $_POST[ $field_u ] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$password = wp_unslash( $_POST[ $field_p ] );
+
 		// Verify u & p first.
 		$this->_dry_run = true;
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-		$user           = wp_authenticate( $_POST[ $field_u ], $_POST[ $field_p ] );
+		$user           = wp_authenticate( $username, $password );
 		$this->_dry_run = false;
 		if ( is_wp_error( $user ) ) {
+			if ( $this->is_credential_error( $user ) ) {
+				// wp_authenticate() already fired wp_login_failed, so do not count it again.
+				return REST::err( Lang::msg( 'auth_failed' ) );
+			}
 			return REST::err( $user->get_error_message() );
 		}
 
 		// Search if the user has enabled 2fa or not.
-		$twofa = get_user_meta( $user->ID, '2fa', true );
+		$twofa = $this->user_secret( $user->ID );
 
-		if ( ! $twofa ) {
+		if ( null === $twofa ) {
 			if ( ! Conf::val( '2fa_force' ) ) {
 				defined( 'debug' ) && debug( 'bypassed due to no 2fa set' );
 				return REST::ok( array( 'bypassed' => 1 ) );
 			}
-			return REST::err( Lang::msg( 'no_2fa_set_user' ) );
+			return REST::err( Lang::msg( 'not_2fa_set_user' ) );
+		}
+		if ( false === $twofa ) {
+			return REST::err( __( 'The stored 2FA secret cannot be decrypted. Restore the WordPress authentication salts or reset this user\'s 2FA secret.', 'dologin' ) );
 		}
 
 		return REST::ok( array( 'info' => __( 'Please provide the code from your 2FA app', 'dologin' ) ) );
+	}
+
+	/**
+	 * Whether a wp_authenticate() error should be counted as a login failure.
+	 */
+	private function is_credential_error( $error ) {
+		$credential_codes = array(
+			'incorrect_password',
+			'invalid_email',
+			'invalid_username',
+		);
+		foreach ( $credential_codes as $code ) {
+			if ( $error->get_error_message( $code ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

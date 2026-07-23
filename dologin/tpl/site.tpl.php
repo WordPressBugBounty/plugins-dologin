@@ -10,6 +10,9 @@ namespace dologin;
 defined( 'WPINC' ) || exit;
 
 ?>
+<?php if ( KLSso::force_enabled() ) : ?>
+	<div class="notice notice-warning inline"><p><?php esc_html_e( 'Force KeyLockr SSO is enabled. Connected-site login tokens remain manageable here but cannot be used to log in.', 'dologin' ); ?></p></div>
+<?php endif; ?>
 <form method="post" action="<?php echo esc_url( menu_page_url( 'dologin', false ) ); ?>" class="dologin-relative" id="token_form">
 	<input type="hidden" name="<?php echo esc_attr( Router::ACTION ); ?>" value="<?php echo esc_attr( Router::ACTION_SITE ); ?>" />
 	<input type="hidden" name="<?php echo esc_attr( Router::TYPE ); ?>" value="<?php echo esc_attr( Site::TYPE_CONNECT ); ?>" />
@@ -83,33 +86,17 @@ defined( 'WPINC' ) || exit;
 			<?php if ( $dologin_v->url && $dologin_v->pk ) : ?>
 				<td>
 					<?php if ( $dologin_v->easy_login ) : ?>
-					<a href="<?php echo esc_url( $dologin_v->easy_login ); ?>" target="_blank" class="button dologin-btn-tiny dologin-btn-success" rel="noopener"><?php esc_html_e( 'Easy Login', 'dologin' ); ?></a></td>
+					<a href="<?php echo esc_url( $dologin_v->easy_login ); ?>" target="_blank" class="button dologin-btn-tiny dologin-btn-success" rel="noopener"><?php esc_html_e( 'Easy Login', 'dologin' ); ?></a>
 					<?php else : ?>
 						<?php esc_html_e( 'Root Site', 'dologin' ); ?>
 					<?php endif; ?>
+				</td>
 				<td><?php echo esc_html( $dologin_v->title ); ?></td>
 				<td><?php echo esc_url( $dologin_v->url ); ?></td>
 				<td><code><?php echo esc_html( $dologin_v->pk ); ?></code></td>
 			<?php elseif ( $dologin_v->_valid ) : ?>
 				<td colspan="4">
-					<div class="dologin-row-flex">
-						<?php esc_html_e( 'Token:', 'dologin' ); ?>
-						<code class="dologin-p10 dologin-code-break dologin_pswd_link dologin_tt dologin_tt--success" data-title="<?php esc_attr_e( 'Click to copy', 'dologin' ); ?>"><?php echo esc_html( $dologin_v->token ); ?></code>
-					</div>
-					<div class="dologin-success dologin-mt5">
-						<?php
-						echo wp_kses_post(
-							sprintf(
-								/* translators: %s: the "Site Connections" tab name. */
-								__( 'Copy to your root WordPress site "DoLogin -> %s" tab to enable easy login to this site.', 'dologin' ),
-								'<strong>' . esc_html__( 'Site Connections', 'dologin' ) . '</strong>'
-							)
-						);
-						?>
-					</div>
-					<p class="dologin-success">
-						<?php esc_html_e( 'Token valid for 1 hour.', 'dologin' ); ?>
-					</p>
+					<div class="dologin-warn"><?php esc_html_e( 'The secret token was shown only when created and is not stored. Generate a new token if it was not copied.', 'dologin' ); ?></div>
 				</td>
 			<?php else : ?>
 				<td colspan="4" class="dologin-danger">

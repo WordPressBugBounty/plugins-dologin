@@ -53,22 +53,42 @@ class REST extends Instance {
 
 		register_rest_route(
 			'dologin/v1',
-			'/sms',
+			'/kl_sso/start',
 			array(
 				'methods'             => 'POST',
-				'callback'            => array( $this, 'sms' ),
+				'callback'            => array( $this->cls( 'KLSso' ), 'start' ),
 				'permission_callback' => '__return_true',
 			)
 		);
 
 		register_rest_route(
 			'dologin/v1',
-			'/test_sms',
+			'/kl_sso/frame',
 			array(
 				'methods'             => 'POST',
-				'callback'            => array( $this, 'test_sms' ),
+				'callback'            => array( $this->cls( 'KLSso' ), 'frame' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			'dologin/v1',
+			'/kl_sso/unbind',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this->cls( 'KLSso' ), 'unbind' ),
+				'permission_callback' => 'is_user_logged_in',
+			)
+		);
+
+		register_rest_route(
+			'dologin/v1',
+			'/kl_sso/reset_keys',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this->cls( 'KLSso' ), 'reset_site_keys' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_network_options' ) || current_user_can( 'manage_options' );
+					return current_user_can( apply_filters( 'dologin_admin_menu_access', 'manage_options' ) );
 				},
 			)
 		);
@@ -86,20 +106,6 @@ class REST extends Instance {
 	 */
 	public function twofa() {
 		return $this->cls( 'TwoFA' )->check();
-	}
-
-	/**
-	 * Send SMS
-	 */
-	public function sms() {
-		return $this->cls( 'SMS' )->send();
-	}
-
-	/**
-	 * Send test SMS
-	 */
-	public function test_sms() {
-		return $this->cls( 'SMS' )->test_send();
 	}
 
 	/**

@@ -2,12 +2,13 @@
 Contributors: WPDO
 Tags: Login security, 2FA login, reCAPTCHA, limit login attempts, passwordless login
 Requires at least: 4.4
+Requires PHP: 5.6
 Tested up to: 7.0
-Stable tag: 4.4
+Stable tag: 4.7.7
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-Easy Login. 2FA login. Passwordless login. reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Whitelist and Blacklist.
+Easy Login. 2FA login. KeyLockr SSO scan login. Passwordless login. reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Whitelist and Blacklist.
 
 == Description ==
 
@@ -17,7 +18,7 @@ Limit the number of login attempts through both the login and the auth cookies.
 
 * Two-factor Authentication login.
 
-* Text SMS message passcode for 2nd step verification support.
+* KeyLockr SSO scan login with encrypted appdata hash verification and session-bound encryption.
 
 * Cloudflare Turnstile (better than Google reCAPTCHA).
 
@@ -33,6 +34,59 @@ Limit the number of login attempts through both the login and the auth cookies.
 
 * XMLRPC gateway protection.
 
+= 🛡️ Security, explained simply =
+
+🔑 **A stolen database should not become a bag of ready-to-use login secrets.**
+
+DoLogin separates stored data from the WordPress authentication salts. If an attacker copies only the database—but does not have the salts from the site configuration—the protected values cannot be used as login links, TOTP seeds, or signing keys.
+
+---------------------------------------
+
+🔗 **Passwordless and child-site tokens: compare without storing the secret**
+
+`Secret in the generated link` ➜ `salt-keyed HMAC` ➜ `database stores only the verifier`
+
+* The raw token is shown when it is created and is never saved in the token table.
+* Login recomputes the HMAC and compares it in constant time.
+* A copied database verifier cannot be pasted into a URL as a working login token.
+* One-time tokens are consumed with an atomic database update, so simultaneous replay attempts cannot both win.
+
+---------------------------------------
+
+🔐 **TOTP and signing keys: encrypted when the server must recover them**
+
+`TOTP seed or private key` ➜ `authenticated encryption + site salt` ➜ `ciphertext in the database`
+
+TOTP verification and digital signatures need the original secret at runtime, so these values cannot use a one-way hash. DoLogin encrypts them instead and rejects modified ciphertext. Existing TOTP seeds and Site Easy Login private keys are migrated automatically.
+
+---------------------------------------
+
+🏠 **Site Easy Login: one signed message, one destination, one use**
+
+`User + trusted public key + destination + issue time + random token ID` ➜ `one Ed25519 signature`
+
+The child site verifies the complete signed message with the public key already saved for that connection. Changing the user or destination breaks the signature, and an atomic consume step blocks replay.
+
+---------------------------------------
+
+📱 **KeyLockr SSO: stable site identity, fresh session encryption**
+
+`Scan QR` ➜ `approve on phone` ➜ `verify Safe + AppData binding` ➜ `WordPress login cookie`
+
+* A fixed per-site signing key lets KeyLockr reuse the same site connection.
+* Every handshake gets a fresh encryption key, so an old signed message cannot be decrypted in a new session.
+* Incoming frames are signed, encrypted, timestamp-checked, replay-checked, rate-limited, and accepted only in the expected protocol phase.
+* Bind and Repair write the WordPress account hash to encrypted KeyLockr AppData, then read it back before completing.
+* Login requires exactly one WordPress user with the matching Safe ID and binding hash.
+
+---------------------------------------
+
+🚦 **Force KeyLockr SSO that fails closed**
+
+`Enable force mode after a verified admin binding` ➜ `keep QR-only policy active` ➜ `never reopen older interactive login methods automatically`
+
+DoLogin checks the current administrator binding before force mode can be enabled. After that policy is saved, a missing binding, changed App Tag, broken site identity, or unavailable KeyLockr service does not restore password, passwordless-link, or connected-site login. While force mode is active, unlinking and site-key reset are blocked. Existing authenticated sessions can disable force mode from settings; if no session remains, rename the plugin folder through FTP or the hosting file manager before repairing the connection. WordPress Application Passwords remain available for API clients.
+
 = API =
 
 * Call the function `$link = function_exists( 'dologin_gen_link' ) ? dologin_gen_link( 'your plugin name or tag' ) : '';` to generate one passwordless login link for the current user.
@@ -42,6 +96,12 @@ Limit the number of login attempts through both the login and the auth cookies.
 The generated one-time used link will be expired after 7 days.
 
 * Define const `SILENCE_INSTALL` to avoid redirecting to setting page after installtion.
+
+= KeyLockr SSO Recovery =
+
+Forced KeyLockr SSO blocks password, passwordless-link, and connected-site interactive logins. Existing authenticated cookies and WordPress Application Passwords remain available.
+
+DoLogin never restores another interactive login method because KeyLockr is unavailable or the saved binding becomes invalid. Use an existing authenticated administrator session to disable force mode. If no such session remains, rename the plugin folder through FTP or the hosting file manager, then repair the connection before enabling force mode again.
 
 = CLI =
 
@@ -67,13 +127,24 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 2. Plugin Settings
 3. Plugin Passwordless Login
 4. Plugin Login Attempts Log
-5. Login Page (After sent dynamic code to mobile text message)
+5. Login Page (KeyLockr SSO QR login)
 6. Login Page (2 times left)
 7. Login Page (Too many failure)
 8. Login Page (Blacklist blocked)
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.7.7 - Jul 22 2026 =
+* 🍀 Made the login-page KeyLockr sign-in start on demand with clear DoLogin branding and a KeyLockr reference link, instead of opening a connection on every login-page visit.
+* 🔐 Protected passwordless and site-connection tokens with salt-keyed HMAC verifiers, and encrypted TOTP and Site Easy Login private keys at rest.
+* 🐞 Fixed an upgrade fatal error by waiting until WordPress salt APIs are available before running migrations.
+* 🔐 Added and hardened KeyLockr SSO QR login with reusable site identity, secure account linking and repair, encrypted AppData verification, bounded decoding, rate-limited replay-resistant sessions, validated redirects, and fail-closed forced login that never restores older interactive methods automatically.
+* 🔐 Fixed Site Easy Login assertion tampering and replay by signing the user, public key, destination, issuance time, and token ID together, then atomically consuming each assertion.
+* 🔐 Hardened 2FA and token login by failing closed when a forced 2FA secret is missing, enforcing lockouts, binding confirmation nonces, and atomically consuming replay state.
+* 🐞 Fixed IPv4/IPv6 allow/deny matching, settings return behavior, deleted-user handling, and multisite table provisioning.
+* 🔐 Restricted companion-plugin installation and protected GeoIP and Turnstile requests while reducing unnecessary external traffic.
+* 🧹 Removed legacy SMS login, the obsolete mobile-number profile field, and the SMS database table.
 
 = 4.4 - Jul 6 2026 =
 * 🐞 Security: Fixed an authentication bypass via insufficient randomness in passwordless and site-connection login tokens (CVE-2026-14495). Login tokens and SMS codes are now generated with a cryptographically secure random source.
