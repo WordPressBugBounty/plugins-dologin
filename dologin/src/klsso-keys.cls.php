@@ -88,7 +88,7 @@ trait KLSso_Keys {
 	}
 
 	/**
-	 * Generate Ed25519 and X25519 keypairs.
+	 * Generate the fixed Ed25519 signing and X25519 encryption keypairs.
 	 */
 	private static function generate_site_keys() {
 		if ( ! self::sodium_ready() ) {
@@ -117,7 +117,7 @@ trait KLSso_Keys {
 		try {
 			$plain = KLSso_MsgPack::pack(
 				array(
-					'v'       => 1,
+					'v'       => 3,
 					'sign_kp' => KLSso_MsgPack::bin( $keys['sign_kp'] ),
 					'box_kp'  => KLSso_MsgPack::bin( $keys['box_kp'] ),
 				)
@@ -149,15 +149,68 @@ trait KLSso_Keys {
 		} catch ( \Exception $ex ) {
 			$data = false;
 		}
-		$keys = is_array( $data ) && isset( $data['v'] ) && 1 === (int) $data['v']
-			? array(
+		$version = is_array( $data ) && isset( $data['v'] ) ? (int) $data['v'] : 0;
+		if ( in_array( $version, array( 1, 3 ), true ) ) {
+			$keys = array(
 				'sign_kp' => self::site_key_bytes( isset( $data['sign_kp'] ) ? $data['sign_kp'] : '' ),
 				'box_kp'  => self::site_key_bytes( isset( $data['box_kp'] ) ? $data['box_kp'] : '' ),
-			)
-			: array();
-		return self::site_keys_valid( $keys )
-			? $keys
-			: new \WP_Error( 'dologin_kl_site_keys_invalid', __( 'Stored KeyLockr site keys are invalid. Reset them in settings.', 'dologin' ) );
+			);
+		} elseif ( 2 === $version ) {
+			try {
+				$keys = array(
+					'sign_kp' => self::site_key_bytes( isset( $data['sign_kp'] ) ? $data['sign_kp'] : '' ),
+					'box_kp'  => sodium_crypto_box_keypair(),
+				);
+			} catch ( \Exception $ex ) {
+				return new \WP_Error( 'dologin_kl_site_keys_generate', __( 'Failed to generate KeyLockr site keys.', 'dologin' ) );
+			}
+		} else {
+			$keys = array();
+		}
+		if ( ! self::site_keys_valid( $keys ) ) {
+			return new \WP_Error( 'dologin_kl_site_keys_invalid', __( 'Stored KeyLockr site keys are invalid. Reset them in settings.', 'dologin' ) );
+		}
+
+		if ( 2 === $version ) {
+			return self::upgrade_site_keys( $stored, $keys );
+		}
+
+		return $keys;
+	}
+
+	/**
+	 * Atomically upgrade a signing-only site-key blob without allowing concurrent
+	 * readers to select different persistent encryption keys.
+	 */
+	private static function upgrade_site_keys( $stored, $keys ) {
+		$upgraded = self::seal_site_keys( $keys );
+		if ( is_wp_error( $upgraded ) ) {
+			return $upgraded;
+		}
+
+		$replaced = self::replace_site_keys_if_current( $stored, $upgraded );
+		if ( 1 === $replaced ) {
+			return $keys;
+		}
+
+		$current = get_option( self::SITE_KEYS_OPTION, '' );
+		if ( is_string( $current ) && '' !== $current && ! hash_equals( $stored, $current ) ) {
+			return self::open_site_keys( $current );
+		}
+
+		return new \WP_Error( 'dologin_kl_site_keys_store', __( 'Failed to store KeyLockr site keys.', 'dologin' ) );
+	}
+
+	/**
+	 * Replace the site-key option only when it still contains the value read.
+	 */
+	private static function replace_site_keys_if_current( $expected, $replacement ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- $wpdb->options is the current site's internal options table; all values are prepared.
+		$updated = $wpdb->query( $wpdb->prepare( "UPDATE `$wpdb->options` SET option_value=%s WHERE option_name=%s AND option_value=%s", $replacement, self::SITE_KEYS_OPTION, $expected ) );
+		wp_cache_delete( self::SITE_KEYS_OPTION, 'options' );
+		return $updated;
 	}
 
 	/**

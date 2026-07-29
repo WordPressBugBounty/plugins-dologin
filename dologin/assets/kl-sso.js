@@ -102,7 +102,11 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		}
 
 		if ( res.message ) {
-			msg( $box, res.message, res.status === 'done' ? 'dologin-success' : 'dologin-warn' );
+			var messageClass = res.status === 'done' ? 'dologin-success' : 'dologin-warn';
+			if ( res.status === 'waiting' && activeMode === 'login' ) {
+				messageClass = 'dologin-kl-action-required';
+			}
+			msg( $box, res.message, messageClass );
 		}
 
 		if ( res.status === 'reconnect' ) {
@@ -263,6 +267,23 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 				showRepairAction( $box );
 			}
 		} );
+	}
+
+	if ( cfg.force && cfg.lostpassword_url ) {
+		var resetUrl = document.createElement( 'a' );
+		resetUrl.href = cfg.lostpassword_url;
+		var $nav = $( '#nav' );
+		$nav.find( 'a' ).filter( function() {
+			return this.href === resetUrl.href;
+		} ).each( function() {
+			if ( this.previousSibling && this.previousSibling.nodeType === 3 ) {
+				$( this.previousSibling ).remove();
+			}
+			$( this ).remove();
+		} );
+		if ( ! $nav.find( 'a' ).length ) {
+			$nav.hide();
+		}
 	}
 
 	$( '.dologin-kl-sso' ).each( function() {

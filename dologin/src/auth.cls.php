@@ -37,6 +37,14 @@ class Auth extends Instance {
 		// Recaptcha validation
 		add_filter( 'registration_errors', array( $this, 'registration_errors' ) );
 		add_filter( 'lostpassword_errors', array( $this, 'lostpassword_errors' ) );
+		add_action( 'login_form_lostpassword', array( $this, 'redirect_password_reset' ), 0 );
+		add_action( 'login_form_retrievepassword', array( $this, 'redirect_password_reset' ), 0 );
+		add_action( 'login_form_resetpass', array( $this, 'redirect_password_reset' ), 0 );
+		add_action( 'login_form_rp', array( $this, 'redirect_password_reset' ), 0 );
+		add_filter( 'allow_password_reset', array( $this, 'password_reset_allowed' ), PHP_INT_MAX, 2 );
+		add_action( 'validate_password_reset', array( $this, 'validate_password_reset' ), PHP_INT_MAX, 2 );
+		add_filter( 'lostpassword_url', array( $this, 'lostpassword_url' ), PHP_INT_MAX, 2 );
+		add_action( 'password_reset', array( $this, 'block_password_reset' ), -PHP_INT_MAX, 2 );
 
 		if ( Conf::val( '2fa' ) && ! KLSso::force_enabled() ) {
 			add_filter( 'authenticate', array( $this->cls( 'TwoFA' ), 'authenticate' ), 30, 3 ); // Need to be after WP auth check
@@ -93,6 +101,75 @@ class Auth extends Instance {
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * Redirect public password-reset screens while forced SSO is active.
+	 *
+	 * @since 4.8.1
+	 */
+	public function redirect_password_reset() {
+		if ( ! KLSso::force_enabled() ) {
+			return;
+		}
+
+		wp_safe_redirect( wp_login_url() );
+		exit;
+	}
+
+	/**
+	 * Prevent password-reset keys from being created while forced SSO is active.
+	 *
+	 * @since 4.8.1
+	 */
+	public function password_reset_allowed( $allow, $user_id ) {
+		if ( KLSso::force_enabled() ) {
+			return false;
+		}
+
+		return $allow;
+	}
+
+	/**
+	 * Prevent existing reset keys from changing passwords while forced SSO is active.
+	 *
+	 * @since 4.8.1
+	 */
+	public function validate_password_reset( $errors, $user ) {
+		if ( KLSso::force_enabled() ) {
+			$errors->add( 'kl_sso_required', __( 'KeyLockr SSO login is required.', 'dologin' ) );
+		}
+	}
+
+	/**
+	 * Redirect password-reset links from core and third-party integrations while forced SSO is active.
+	 *
+	 * @since 4.8.1
+	 */
+	public function lostpassword_url( $url, $redirect ) {
+		if ( ! KLSso::force_enabled() || did_action( 'login_init' ) ) {
+			return $url;
+		}
+
+		return wp_login_url( $redirect );
+	}
+
+	/**
+	 * Stop direct password resets before WordPress writes the new password.
+	 *
+	 * @since 4.8.1
+	 */
+	public function block_password_reset( $user, $new_pass ) {
+		if ( KLSso::force_enabled() ) {
+			wp_die(
+				__( 'KeyLockr SSO login is required.', 'dologin' ),
+				__( 'Password Reset Disabled', 'dologin' ),
+				array(
+					'response'  => 403,
+					'back_link' => true,
+				)
+			);
+		}
 	}
 
 	/**
@@ -270,6 +347,23 @@ class Auth extends Instance {
 		if ( ! KLSso::force_enabled() ) {
 			return $user;
 		}
+
+		if ( '' === $username && '' === $password ) {
+			// Preserve WordPress core's passive login-page result so a page view is not recorded as a failed login.
+			if ( is_wp_error( $user ) ) {
+				return $user;
+			}
+
+			// Preserve an existing authenticated session without allowing credential-free authentication providers.
+			if (
+				$user instanceof \WP_User
+				&& 0 < (int) $user->ID
+				&& (int) $user->ID === (int) get_current_user_id()
+			) {
+				return $user;
+			}
+		}
+
 		if ( $user instanceof \WP_User && (int) $user->ID === (int) $this->_application_password_user_id ) {
 			return $user;
 		}

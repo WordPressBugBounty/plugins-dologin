@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       DoLogin Security
  * Description:       Passwordless login. 2FA verification login. GeoLocation (Continent/Country/City) or IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce. Login attempt limit. CLI supported for generating passwordless login.
- * Version:           4.7.7
+ * Version:           4.8.3
  * Requires PHP:      5.6
  * Author:            WPDO
  * License:           GPLv3
@@ -33,7 +33,7 @@ if (defined('DOLOGIN_V')) {
 	return;
 }
 
-define('DOLOGIN_V', '4.7.7');
+define('DOLOGIN_V', '4.8.3');
 
 !defined('DOLOGIN_DIR') && define('DOLOGIN_DIR', __DIR__ . '/'); // Full absolute path '/usr/local/***/wp-content/plugins/dologin/' or MU
 !defined('DOLOGIN_PLUGIN_URL') && define('DOLOGIN_PLUGIN_URL', plugin_dir_url(__FILE__)); // Full URL path '//example.com/wp-content/plugins/dologin/'

@@ -4,7 +4,7 @@ Tags: Login security, 2FA login, reCAPTCHA, limit login attempts, passwordless l
 Requires at least: 4.4
 Requires PHP: 5.6
 Tested up to: 7.0
-Stable tag: 4.7.7
+Stable tag: 4.8.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -69,15 +69,16 @@ The child site verifies the complete signed message with the public key already 
 
 ---------------------------------------
 
-📱 **KeyLockr SSO: stable site identity, fresh session encryption**
+📱 **KeyLockr SSO: stable signing and encryption identity**
 
 `Scan QR` ➜ `approve on phone` ➜ `verify Safe + AppData binding` ➜ `WordPress login cookie`
 
-* A fixed per-site signing key lets KeyLockr reuse the same site connection.
-* Every handshake gets a fresh encryption key, so an old signed message cannot be decrypted in a new session.
+* Fixed per-site signing and encryption keypairs let KeyLockr reuse the same backend-owned connection identity.
+* Existing signing-only key storage is upgraded atomically with one persistent encryption keypair.
 * Incoming frames are signed, encrypted, timestamp-checked, replay-checked, rate-limited, and accepted only in the expected protocol phase.
 * Bind and Repair write the WordPress account hash to encrypted KeyLockr AppData, then read it back before completing.
 * Login requires exactly one WordPress user with the matching Safe ID and binding hash.
+* After a QR scan, the phone-unlock and approval prompt is highlighted in green so the next action is clear.
 
 ---------------------------------------
 
@@ -85,7 +86,7 @@ The child site verifies the complete signed message with the public key already 
 
 `Enable force mode after a verified admin binding` ➜ `keep QR-only policy active` ➜ `never reopen older interactive login methods automatically`
 
-DoLogin checks the current administrator binding before force mode can be enabled. After that policy is saved, a missing binding, changed App Tag, broken site identity, or unavailable KeyLockr service does not restore password, passwordless-link, or connected-site login. While force mode is active, unlinking and site-key reset are blocked. Existing authenticated sessions can disable force mode from settings; if no session remains, rename the plugin folder through FTP or the hosting file manager before repairing the connection. WordPress Application Passwords remain available for API clients.
+DoLogin checks the current administrator binding before force mode can be enabled. After that policy is saved, a missing binding, changed App Tag, broken site identity, or unavailable KeyLockr service does not restore password, passwordless-link, connected-site, or password-reset login paths. The WordPress lost-password link and core password-reset screens are removed while force mode is active; unlinking and site-key reset are also blocked. Existing authenticated sessions can disable force mode from settings; if no session remains, rename the plugin folder through FTP or the hosting file manager before repairing the connection. WordPress Application Passwords remain available for API clients.
 
 = API =
 
@@ -134,6 +135,13 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.8.3 - Jul 28 2026 =
+* 🐞 Kept valid KeyLockr site-key blobs read-only and limited storage migration to signing-only blobs, preventing avoidable login failures when no key material needs an upgrade.
+* 🔐 Restored a fixed per-site KeyLockr encryption keypair and atomically upgraded signing-only storage so repeated QR logins reuse the same backend-owned encryption identity.
+* 🐞 Stopped passive visits to the WordPress login page from being counted as failed login attempts while Force KeyLockr SSO is enabled.
+* 🍀 Highlighted the post-scan KeyLockr unlock and approval prompt in green so users can see that the next action is on their phone.
+* 🔐 Removed lost-password links across supported WordPress versions and blocked both new and pre-issued password-reset keys across core and third-party reset flows while Force KeyLockr SSO keeps username/password login disabled.
 
 = 4.7.7 - Jul 22 2026 =
 * 🍀 Made the login-page KeyLockr sign-in start on demand with clear DoLogin branding and a KeyLockr reference link, instead of opening a connection on every login-page visit.

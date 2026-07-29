@@ -317,7 +317,6 @@ class KLSso extends Instance {
 
 		try {
 			$state_id = bin2hex( random_bytes( 16 ) );
-			$box_kp   = $this->new_session_box_keypair();
 		} catch ( \Exception $ex ) {
 			return REST::err( __( 'Failed to create KeyLockr SSO session.', 'dologin' ) );
 		}
@@ -327,6 +326,7 @@ class KLSso extends Instance {
 			return REST::err( $site_keys->get_error_message() );
 		}
 		$sign_kp = $site_keys['sign_kp'];
+		$box_kp  = $site_keys['box_kp'];
 		$sign_pk = sodium_crypto_sign_publickey( $sign_kp );
 		$sign_sk = sodium_crypto_sign_secretkey( $sign_kp );
 		$enc_pk  = sodium_crypto_box_publickey( $box_kp );

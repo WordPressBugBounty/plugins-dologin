@@ -23,6 +23,9 @@ class GUI extends Instance {
 	 */
 	public function init() {
 		add_action( 'login_message', array( $this, 'login_message' ) );
+		add_filter( 'login_body_class', array( $this, 'login_body_class' ), 10, 2 );
+		add_filter( 'lost_password_html_link', array( $this, 'lost_password_html_link' ), PHP_INT_MAX );
+		add_filter( 'login_link_separator', array( $this, 'login_link_separator' ), PHP_INT_MAX );
 
 		add_action( 'login_enqueue_scripts', array( $this, 'login_enqueue_scripts' ) );
 
@@ -36,6 +39,37 @@ class GUI extends Instance {
 
 		add_action( 'woocommerce_login_form', array( $this, 'login_enqueue_scripts' ) );
 		add_action( 'woocommerce_login_form', array( $this, 'login_form' ) );
+	}
+
+	/**
+	 * Mark forced-SSO login screens for immediate password-reset link hiding.
+	 *
+	 * @since 4.8.1
+	 */
+	public function login_body_class( $classes, $action ) {
+		if ( 'login' === $action && KLSso::force_enabled() ) {
+			$classes[] = 'dologin-kl-force-login';
+		}
+
+		return $classes;
+	}
+
+	/**
+	 * Drop the core lost-password link server-side while forced SSO is active (WP 6.1+).
+	 *
+	 * @since 4.8.1
+	 */
+	public function lost_password_html_link( $link ) {
+		return KLSso::force_enabled() ? '' : $link;
+	}
+
+	/**
+	 * Drop the nav separator that would otherwise dangle after the removed lost-password link.
+	 *
+	 * @since 4.8.1
+	 */
+	public function login_link_separator( $separator ) {
+		return KLSso::force_enabled() ? '' : $separator;
 	}
 
 	/**
@@ -124,13 +158,14 @@ class GUI extends Instance {
 			'dologin_kl_sso',
 			'dologin_kl_sso',
 			array(
-				'mode'       => $mode,
-				'force'      => KLSso::force_enabled(),
-				'url_start'  => get_rest_url( null, 'dologin/v1/kl_sso/start' ),
-				'url_frame'  => get_rest_url( null, 'dologin/v1/kl_sso/frame' ),
-				'url_unbind' => get_rest_url( null, 'dologin/v1/kl_sso/unbind' ),
-				'nonce'      => wp_create_nonce( 'wp_rest' ),
-				'i18n'      => array(
+				'mode'             => $mode,
+				'force'            => KLSso::force_enabled(),
+				'url_start'        => get_rest_url( null, 'dologin/v1/kl_sso/start' ),
+				'url_frame'        => get_rest_url( null, 'dologin/v1/kl_sso/frame' ),
+				'url_unbind'       => get_rest_url( null, 'dologin/v1/kl_sso/unbind' ),
+				'lostpassword_url' => wp_lostpassword_url(),
+				'nonce'            => wp_create_nonce( 'wp_rest' ),
+				'i18n'             => array(
 					'connecting' => __( 'Connecting to KeyLockr...', 'dologin' ),
 					'new_qr'     => __( 'Get New QR', 'dologin' ),
 					'failed'     => __( 'KeyLockr SSO failed.', 'dologin' ),

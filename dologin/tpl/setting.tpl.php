@@ -133,7 +133,7 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 							<span class="dologin-kl-site-key-status" aria-live="polite"></span>
 						<?php endif; ?>
 						<button type="button" class="button dologin-kl-reset-keys" <?php disabled( KLSso::force_enabled() ); ?>><?php esc_html_e( 'Reset Site Keys', 'dologin' ); ?></button>
-						<p><?php esc_html_e( 'The signing key keeps this WordPress site on one KeyLockr connection identity, while every handshake uses a fresh encryption key. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login.', 'dologin' ); ?></p>
+						<p><?php esc_html_e( 'The fixed signing and encryption keys keep this WordPress site on one KeyLockr connection identity. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login.', 'dologin' ); ?></p>
 						<?php if ( KLSso::force_enabled() ) : ?>
 							<p class="dologin-warn"><?php esc_html_e( 'Disable Force KeyLockr SSO before resetting the site keys.', 'dologin' ); ?></p>
 						<?php endif; ?>

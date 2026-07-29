@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: DoLogin Security 4.7.7\n"
+"Project-Id-Version: DoLogin Security 4.8.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/dologin\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-22T22:35:49+00:00\n"
+"POT-Creation-Date: 2026-07-28T23:24:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: dologin\n"
@@ -77,12 +77,18 @@ msgstr ""
 msgid "Deleted user"
 msgstr ""
 
-#: src/auth.cls.php:278
+#: src/auth.cls.php:140
+#: src/auth.cls.php:165
+#: src/auth.cls.php:372
 msgid "KeyLockr SSO login is required."
 msgstr ""
 
+#: src/auth.cls.php:166
+msgid "Password Reset Disabled"
+msgstr ""
+
 #. translators: %d: number of cleared records.
-#: src/auth.cls.php:428
+#: src/auth.cls.php:522
 msgid "Cleared %d record(s) successfully!"
 msgstr ""
 
@@ -125,56 +131,56 @@ msgstr ""
 msgid "Failed to write to %s."
 msgstr ""
 
-#: src/gui.cls.php:101
+#: src/gui.cls.php:135
 msgid "Looking up this IP address..."
 msgstr ""
 
-#: src/gui.cls.php:102
+#: src/gui.cls.php:136
 msgid "Failed to look up this IP address."
 msgstr ""
 
-#: src/gui.cls.php:103
+#: src/gui.cls.php:137
 msgid "Reset the KeyLockr site keys? Future scans will create a new KeyLockr connection. Linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed."
 msgstr ""
 
-#: src/gui.cls.php:104
+#: src/gui.cls.php:138
 msgid "Resetting KeyLockr site keys..."
 msgstr ""
 
-#: src/gui.cls.php:105
+#: src/gui.cls.php:139
 #: src/klsso-keys.cls.php:46
 msgid "Failed to reset KeyLockr site keys."
 msgstr ""
 
-#: src/gui.cls.php:134
+#: src/gui.cls.php:169
 msgid "Connecting to KeyLockr..."
 msgstr ""
 
-#: src/gui.cls.php:135
+#: src/gui.cls.php:170
 msgid "Get New QR"
 msgstr ""
 
-#: src/gui.cls.php:136
+#: src/gui.cls.php:171
 msgid "KeyLockr SSO failed."
 msgstr ""
 
-#: src/gui.cls.php:137
+#: src/gui.cls.php:172
 msgid "KeyLockr SSO verified."
 msgstr ""
 
-#: src/gui.cls.php:138
+#: src/gui.cls.php:173
 msgid "Unlink KeyLockr SSO from this WordPress account?"
 msgstr ""
 
-#: src/gui.cls.php:160
+#: src/gui.cls.php:195
 msgid "Dynamic Code"
 msgstr ""
 
-#: src/gui.cls.php:282
+#: src/gui.cls.php:317
 msgid "OFF"
 msgstr ""
 
-#: src/gui.cls.php:283
+#: src/gui.cls.php:318
 #: src/lang.cls.php:71
 msgid "ON"
 msgstr ""
@@ -205,10 +211,12 @@ msgid "Sodium cryptography support is required."
 msgstr ""
 
 #: src/klsso-keys.cls.php:87
+#: src/klsso-keys.cls.php:201
 msgid "Failed to store KeyLockr site keys."
 msgstr ""
 
 #: src/klsso-keys.cls.php:103
+#: src/klsso-keys.cls.php:165
 msgid "Failed to generate KeyLockr site keys."
 msgstr ""
 
@@ -225,7 +233,7 @@ msgid "Failed to protect KeyLockr site keys."
 msgstr ""
 
 #: src/klsso-keys.cls.php:139
-#: src/klsso-keys.cls.php:160
+#: src/klsso-keys.cls.php:171
 msgid "Stored KeyLockr site keys are invalid. Reset them in settings."
 msgstr ""
 
@@ -367,12 +375,12 @@ msgstr ""
 msgid "KeyLockr SSO connection repaired successfully."
 msgstr ""
 
-#: src/klsso-state.cls.php:232
+#: src/klsso-state.cls.php:224
 msgid "Unexpected KeyLockr SSO message sequence."
 msgstr ""
 
-#: src/klsso-state.cls.php:238
-#: src/klsso-state.cls.php:245
+#: src/klsso-state.cls.php:230
+#: src/klsso-state.cls.php:237
 msgid "Invalid KeyLockr SSO session phase."
 msgstr ""
 
@@ -502,7 +510,7 @@ msgstr ""
 msgid "Too many KeyLockr SSO session requests. Please try later."
 msgstr ""
 
-#: src/klsso.cls.php:322
+#: src/klsso.cls.php:321
 msgid "Failed to create KeyLockr SSO session."
 msgstr ""
 
@@ -1174,7 +1182,7 @@ msgid "Reset Site Keys"
 msgstr ""
 
 #: tpl/setting.tpl.php:136
-msgid "The signing key keeps this WordPress site on one KeyLockr connection identity, while every handshake uses a fresh encryption key. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login."
+msgid "The fixed signing and encryption keys keep this WordPress site on one KeyLockr connection identity. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login."
 msgstr ""
 
 #: tpl/setting.tpl.php:145

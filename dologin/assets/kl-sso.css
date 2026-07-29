@@ -130,3 +130,19 @@
 		text-align: center;
 	}
 }
+
+.dologin-kl-force-login.login-action-login #nav a[href*="action=lostpassword"],
+.dologin-kl-force-login.login-action-login #nav a[href*="action=retrievepassword"] {
+	display: none;
+}
+
+.dologin-kl-sso-login .dologin-kl-msg.dologin-kl-action-required {
+	background: #eaf7ed;
+	border: 1px solid #72ad7a;
+	border-radius: 4px;
+	box-sizing: border-box;
+	color: #008000;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 8px 10px;
+}

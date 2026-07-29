@@ -11,14 +11,6 @@ namespace dologin;
 defined( 'WPINC' ) || exit;
 
 trait KLSso_State {
-
-	/**
-	 * Generate encryption keys that are unique to one handshake session.
-	 */
-	private function new_session_box_keypair() {
-		return sodium_crypto_box_keypair();
-	}
-
 	/**
 	 * Store session state with private fields sealed at rest.
 	 */
