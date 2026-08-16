@@ -11,7 +11,7 @@ defined( 'WPINC' ) || exit;
 
 ?>
 <?php if ( KLSso::force_enabled() ) : ?>
-	<div class="notice notice-warning inline"><p><?php esc_html_e( 'Force KeyLockr SSO is enabled. Connected-site login tokens remain manageable here but cannot be used to log in.', 'dologin' ); ?></p></div>
+	<div class="notice notice-warning inline"><p><?php echo wp_kses_post( __( '<code>Force KeyLockr SSO</code> is enabled. Connected-site login tokens remain manageable here but cannot be used to log in.', 'dologin' ) ); ?></p></div>
 <?php endif; ?>
 <form method="post" action="<?php echo esc_url( menu_page_url( 'dologin', false ) ); ?>" class="dologin-relative" id="token_form">
 	<input type="hidden" name="<?php echo esc_attr( Router::ACTION ); ?>" value="<?php echo esc_attr( Router::ACTION_SITE ); ?>" />
@@ -80,7 +80,13 @@ defined( 'WPINC' ) || exit;
 	</tr>
 	</thead>
 	<tbody>
-	<?php foreach ( $this->sites() as $dologin_v ) : ?>
+	<?php $dologin_site_list = (array) $this->sites(); ?>
+	<?php if ( ! $dologin_site_list ) : ?>
+		<tr class="no-items">
+			<td colspan="9"><?php esc_html_e( 'No list yet.', 'dologin' ); ?></td>
+		</tr>
+	<?php endif; ?>
+	<?php foreach ( $dologin_site_list as $dologin_v ) : ?>
 		<tr>
 			<td><?php echo (int) $dologin_v->id; ?></td>
 			<?php if ( $dologin_v->url && $dologin_v->pk ) : ?>

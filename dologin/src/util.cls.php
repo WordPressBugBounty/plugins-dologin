@@ -171,14 +171,12 @@ class Util extends Instance {
 	 * @access public
 	 */
 	public static function pagination( $total, $limit, $return_offset = false ) {
-		$pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading pagination index only, no state change.
-
+		$pagenum      = isset( $_GET['pagenum'] ) ? max( 1, absint( $_GET['pagenum'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading pagination index only, no state change.
+		$total        = max( 0, absint( $total ) );
+		$limit        = max( 1, absint( $limit ) );
+		$num_of_pages = (int) ceil( $total / $limit );
+		$pagenum      = min( $pagenum, max( 1, $num_of_pages ) );
 		$offset       = ( $pagenum - 1 ) * $limit;
-		$num_of_pages = ceil( $total / $limit );
-
-		if ( $offset > $total ) {
-			$offset = $total - $limit;
-		}
 
 		if ( $return_offset ) {
 			return $offset;
@@ -220,10 +218,54 @@ class Util extends Instance {
 		self::version_check( 'uninstall' );
 
 		if ( is_multisite() ) {
-			self::run_for_sites( 'delete_tables' );
-			return;
+			self::run_for_sites( 'delete_data' );
+		} else {
+			self::delete_site_data();
 		}
+		self::delete_user_data();
+	}
+
+	/**
+	 * Delete plugin tables and options from the current site.
+	 */
+	private static function delete_site_data() {
+		global $wpdb;
+
 		Data::cls()->tables_del();
+		$q = "SELECT option_name FROM `$wpdb->options` WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- $wpdb->options is the current site's internal options table; prefixes are prepared and delete_option() clears caches.
+		$option_names = $wpdb->get_col(
+			$wpdb->prepare(
+				$q,
+				$wpdb->esc_like( 'dologin.' ) . '%',
+				$wpdb->esc_like( 'dologin_kl_' ) . '%',
+				$wpdb->esc_like( '_transient_dologin_' ) . '%',
+				$wpdb->esc_like( '_transient_timeout_dologin_' ) . '%'
+			)
+		);
+		foreach ( (array) $option_names as $option_name ) {
+			delete_option( (string) $option_name );
+		}
+	}
+
+	/**
+	 * Delete plugin user metadata shared by the WordPress installation.
+	 */
+	private static function delete_user_data() {
+		global $wpdb;
+
+		$q = "SELECT DISTINCT meta_key FROM `$wpdb->usermeta` WHERE meta_key = %s OR meta_key LIKE %s";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- $wpdb->usermeta is the internal usermeta table; keys are prepared and delete_metadata() clears caches.
+		$meta_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				$q,
+				'2fa',
+				$wpdb->esc_like( 'dologin_kl_' ) . '%'
+			)
+		);
+		foreach ( (array) $meta_keys as $meta_key ) {
+			delete_metadata( 'user', 0, (string) $meta_key, '', true );
+		}
 	}
 
 	/**
@@ -260,7 +302,7 @@ class Util extends Instance {
 	}
 
 	/**
-	 * Run table lifecycle operations on every site in a multisite network.
+	 * Run plugin data lifecycle operations on every site in a multisite network.
 	 */
 	private static function run_for_sites( $operation ) {
 		$site_ids = array();
@@ -286,14 +328,16 @@ class Util extends Instance {
 	}
 
 	/**
-	 * Safely switch site context and run a table lifecycle operation.
+	 * Safely switch site context and run a plugin data lifecycle operation.
 	 */
 	private static function run_for_site( $site_id, $operation ) {
 		$switched = is_multisite() && (int) get_current_blog_id() !== (int) $site_id;
 		if ( $switched ) {
 			switch_to_blog( $site_id );
 		}
-		if ( 'delete_tables' === $operation ) {
+		if ( 'delete_data' === $operation ) {
+			self::delete_site_data();
+		} elseif ( 'delete_tables' === $operation ) {
 			Data::cls()->tables_del();
 		} else {
 			Data::cls()->tables_create();

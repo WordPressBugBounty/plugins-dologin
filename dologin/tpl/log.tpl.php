@@ -19,7 +19,7 @@ $dologin_pagination = Util::pagination( $dologin_count, 20 );
 	</h3>
 
 	<div class="dologin-float-submit">
-		<a href="<?php echo esc_url( Util::build_url( Router::ACTION_AUTH, Auth::TYPE_CLEAR_LOG ) ); ?>" class="button dologin-btn-warning"><?php esc_html_e( 'Clear records older than one month', 'dologin' ); ?></a>
+		<a href="<?php echo esc_url( Util::build_url( Router::ACTION_AUTH, Auth::TYPE_CLEAR_LOG ) ); ?>" class="button dologin-btn-warning dologin-clear-log"><?php esc_html_e( 'Clear records older than one month', 'dologin' ); ?></a>
 	</div>
 </div>
 
@@ -39,16 +39,22 @@ $dologin_pagination = Util::pagination( $dologin_count, 20 );
 	</tr>
 	</thead>
 	<tbody>
-	<?php foreach ( $dologin_list as $dologin_v ) : ?>
-		<tr>
-			<td><?php echo (int) $dologin_v->id; ?></td>
-			<td><?php echo esc_html( Util::readable_time( $dologin_v->dateline ) ); ?></td>
-			<td><?php echo esc_html( $dologin_v->ip ); ?></td>
-			<td><?php echo esc_html( $dologin_v->ip_geo ); ?></td>
-			<td><?php echo esc_html( $dologin_v->username ); ?></td>
-			<td><?php echo esc_html( $dologin_v->gateway ); ?></td>
+	<?php if ( empty( $dologin_list ) ) : ?>
+		<tr class="no-items">
+			<td colspan="6"><?php esc_html_e( 'No login attempts recorded yet.', 'dologin' ); ?></td>
 		</tr>
-	<?php endforeach; ?>
+	<?php else : ?>
+		<?php foreach ( $dologin_list as $dologin_v ) : ?>
+			<tr>
+				<td><?php echo (int) $dologin_v->id; ?></td>
+				<td><?php echo esc_html( Util::readable_time( $dologin_v->dateline ) ); ?></td>
+				<td><?php echo esc_html( $dologin_v->ip ); ?></td>
+				<td><?php echo esc_html( $dologin_v->ip_geo ); ?></td>
+				<td><?php echo esc_html( $dologin_v->username ); ?></td>
+				<td><?php echo esc_html( $dologin_v->gateway ); ?></td>
+			</tr>
+		<?php endforeach; ?>
+	<?php endif; ?>
 	</tbody>
 </table>
 

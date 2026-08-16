@@ -15,6 +15,60 @@ class TwoFA extends Instance {
 	private $_dry_run = false;
 
 	/**
+	 * Register replay-marker lifecycle cleanup.
+	 */
+	public function init() {
+		add_action( 'added_user_meta', array( $this, 'clear_replay_marker_for_meta' ), 10, 3 );
+		add_action( 'deleted_user_meta', array( $this, 'clear_replay_marker_for_meta' ), 10, 3 );
+		add_action( 'deleted_user', array( $this, 'delete_replay_markers' ), 10, 1 );
+		add_action( 'remove_user_from_blog', array( $this, 'delete_replay_marker' ), 10, 1 );
+	}
+
+	/**
+	 * Delete replay state when a user's TOTP secret changes.
+	 */
+	public function clear_replay_marker_for_meta( $meta_ids, $user_id, $meta_key ) {
+		if ( '2fa' === $meta_key ) {
+			$this->delete_replay_markers( $user_id );
+		}
+	}
+
+	/**
+	 * Delete one user's replay markers from every site where they are a member.
+	 */
+	public function delete_replay_markers( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( $user_id < 1 ) {
+			return;
+		}
+		$this->delete_replay_marker( $user_id );
+		if ( ! is_multisite() || ! function_exists( 'get_blogs_of_user' ) ) {
+			return;
+		}
+
+		$current_blog_id = (int) get_current_blog_id();
+		foreach ( (array) get_blogs_of_user( $user_id ) as $blog ) {
+			$blog_id = is_object( $blog ) && isset( $blog->userblog_id ) ? (int) $blog->userblog_id : 0;
+			if ( $blog_id < 1 || $current_blog_id === $blog_id ) {
+				continue;
+			}
+			switch_to_blog( $blog_id );
+			$this->delete_replay_marker( $user_id );
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * Delete one user's replay marker from the current site.
+	 */
+	public function delete_replay_marker( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( $user_id > 0 ) {
+			delete_option( self::replay_option_name( $user_id ) );
+		}
+	}
+
+	/**
 	 * Maybe save user 2fa status
 	 *
 	 * @since 3.5
@@ -202,7 +256,7 @@ class TwoFA extends Instance {
 	private function consume_time_slice( $user_id, $fingerprint, $time_slice ) {
 		global $wpdb;
 
-		$option_name = 'dologin.2fa.last.' . (int) $user_id;
+		$option_name = self::replay_option_name( $user_id );
 		$new_value   = $fingerprint . ':' . (int) $time_slice;
 		for ( $attempt = 0; $attempt < 2; $attempt++ ) {
 			$current = (string) get_option( $option_name, '' );
@@ -228,6 +282,13 @@ class TwoFA extends Instance {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Build one user's current-site replay option name.
+	 */
+	private static function replay_option_name( $user_id ) {
+		return 'dologin.2fa.last.' . (int) $user_id;
 	}
 
 	/**

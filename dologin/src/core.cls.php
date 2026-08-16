@@ -28,6 +28,8 @@ class Core extends Instance {
 
 		$this->cls( 'Auth' )->init();
 
+		$this->cls( 'TwoFA' )->init();
+
 		$this->cls( 'GUI' )->init();
 
 		$this->cls( 'REST' )->init();

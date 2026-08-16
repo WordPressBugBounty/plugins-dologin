@@ -1,7 +1,228 @@
+.dologin-kl-sso {
+	margin: 14px 0 18px;
+	text-align: center;
+}
+
+.dologin-kl-sso-login {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	box-sizing: border-box;
+	padding: 16px;
+}
+
+.dologin-kl-brand {
+	color: #1d2327;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+
+.dologin-kl-title {
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+
+.dologin-kl-sso-login .dologin-kl-title {
+	font-size: 16px;
+	margin: 4px 0 10px;
+}
+
+.dologin-kl-qr {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	min-height: 210px;
+}
+
+.dologin-kl-qr svg {
+	background: #fff;
+	height: auto;
+	max-width: 230px;
+	width: 100%;
+}
+
+.dologin-kl-sso-login .dologin-kl-qr:empty {
+	display: none;
+}
+
+.dologin-kl-msg {
+	font-size: 12px;
+	line-height: 1.5;
+	margin: 8px auto;
+	max-width: 320px;
+}
+
+.dologin-kl-sso .dologin-kl-refresh,
+.dologin-kl-sso .dologin-kl-open {
+	margin-top: 8px;
+}
+
+.dologin-kl-open[hidden],
+.dologin-kl-open-note[hidden] {
+	display: none;
+}
+
+.dologin-kl-open-note {
+	color: #646970;
+	display: block;
+	font-size: 12px;
+	line-height: 1.5;
+	margin-top: 6px;
+}
+
+.dologin-kl-www {
+	color: #646970;
+	font-size: 11px;
+	line-height: 1.5;
+	margin-top: 10px;
+}
+
+.dologin-kl-www a {
+	font-weight: 600;
+}
+
+.dologin-kl-unlink {
+	margin: 8px 0 0 6px !important;
+}
+
+.dologin-kl-force-login.login-action-login #loginform > p,
+.dologin-kl-force-login.login-action-login #loginform .user-pass-wrap,
+.dologin-kl-force-login.login-action-login #loginform .forgetmenot,
+.dologin-kl-force-login.login-action-login #loginform .submit,
+.dologin-kl-force > p,
+.dologin-kl-force .user-pass-wrap,
+.dologin-kl-force .forgetmenot,
+.dologin-kl-force .submit {
+	display: none;
+}
+
+.dologin-kl-force-login .dologin-kl-sso,
+.dologin-kl-force .dologin-kl-sso {
+	display: block;
+}
+
+.dologin-kl-link {
+	border-left: 3px solid #c3c4c7;
+	margin-top: 10px;
+	padding-left: 14px;
+}
+
+/* .dologin-kl-profile covers profile.php, which renders outside .dologin-wrap. */
+.dologin-wrap code,
+.dologin-kl-profile code {
+	background-color: #dde9f5;
+	border-radius: 3px;
+	color: #666;
+	font-size: 11px;
+	font-style: normal;
+}
+
 .dologin-kl-sso-admin {
 	font-size: 13px;
 	max-width: 680px;
 	text-align: left;
+}
+
+.dologin-kl-setup {
+	--dologin-kl-panel-radius: 4px;
+	--dologin-kl-section-gap: 16px;
+	color: #50575e;
+	max-width: 840px;
+}
+
+.dologin-kl-setup .dologin-kl-mydev-intro {
+	margin: 12px 0 var(--dologin-kl-section-gap);
+}
+
+.dologin-kl-key-panel {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: var(--dologin-kl-panel-radius);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	margin-bottom: var(--dologin-kl-section-gap);
+}
+
+.dologin-kl-key-row {
+	padding: 14px 16px;
+}
+
+.dologin-kl-key-row + .dologin-kl-key-row {
+	border-top: 1px solid #dcdcde;
+}
+
+.dologin-kl-key-label {
+	color: #1d2327;
+	display: block;
+	font-size: 13px;
+}
+
+.dologin-kl-key-value {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 7px;
+}
+
+.dologin-kl-key-value code {
+	max-width: 100%;
+}
+
+.dologin-kl-key-row p {
+	margin: 8px 0 0;
+	max-width: 72ch;
+}
+
+.dologin-kl-key-row .dologin-kl-reset-keys.button,
+.dologin-kl-key-row .dologin-kl-copy-public-key.button,
+.dologin-kl-key-row .dologin-kl-copy-status,
+.dologin-kl-key-row .dologin-kl-site-key-status {
+	margin: 0;
+}
+
+.dologin-kl-mydev-settings {
+	border: 1px solid #c3c4c7;
+	border-radius: var(--dologin-kl-panel-radius);
+	overflow: hidden;
+}
+
+.dologin-kl-mydev-settings > strong {
+	background: #f0f6fc;
+	color: #1d2327;
+	display: block;
+	font-size: 13px;
+	padding: 10px 14px;
+}
+
+.dologin-kl-mydev-settings dl {
+	margin: 0;
+}
+
+.dologin-kl-mydev-row {
+	display: grid;
+	gap: 14px;
+	grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+	padding: 10px 14px;
+}
+
+.dologin-kl-mydev-row + .dologin-kl-mydev-row {
+	border-top: 1px solid #dcdcde;
+}
+
+.dologin-kl-mydev-row dt {
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.dologin-kl-mydev-row dd {
+	margin: 0;
+}
+
+.dologin-kl-setup .dologin-kl-mydev-finish {
+	margin: 10px 0 0;
 }
 
 .dologin-kl-account {
@@ -50,17 +271,11 @@
 	outline: 2px solid transparent;
 }
 
-.dologin-kl-site-keys {
-	margin-top: 14px;
-}
-
-.dologin-kl-site-keys .dologin-kl-reset-keys {
-	margin-left: 10px;
-}
-
-.dologin-kl-site-key-status {
-	display: inline-block;
-	margin-left: 8px;
+.dologin-kl-encryption-public-key {
+	direction: ltr;
+	overflow-wrap: anywhere;
+	unicode-bidi: isolate;
+	word-break: break-all;
 }
 
 .dologin-kl-pairing {
@@ -94,7 +309,12 @@
 }
 
 .dologin-kl-pairing-controls .dologin-kl-refresh {
-	margin-top: 0 !important;
+	margin-top: 0;
+}
+
+.dologin-kl-pairing-controls .dologin-kl-open,
+.dologin-kl-pairing-controls .dologin-kl-open-note {
+	margin-top: 0;
 }
 
 .dologin-kl-force-note {
@@ -106,6 +326,11 @@
 }
 
 @media screen and (max-width: 680px) {
+	.dologin-kl-mydev-row {
+		gap: 4px;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.dologin-kl-account {
 		align-items: flex-start;
 		flex-direction: column;

@@ -46,6 +46,8 @@ trait KLSso_UI {
 			<div class="dologin-kl-qr" role="img" aria-label="<?php esc_attr_e( 'KeyLockr SSO QR code', 'dologin' ); ?>"></div>
 			<div class="dologin-kl-msg" aria-live="polite"><?php esc_html_e( 'Start KeyLockr verification when you are ready. A QR code and secure connection are created only after you continue.', 'dologin' ); ?></div>
 			<button type="button" class="button button-primary dologin-kl-refresh"><?php esc_html_e( 'Start KeyLockr Login', 'dologin' ); ?></button>
+			<a class="button button-primary dologin-kl-open" hidden><?php esc_html_e( 'Open KeyLockr on This Device', 'dologin' ); ?></a>
+			<span class="dologin-kl-open-note" hidden><?php esc_html_e( 'After approval, KeyLockr returns you to this page automatically.', 'dologin' ); ?></span>
 		</div>
 		<?php
 	}
@@ -66,6 +68,8 @@ trait KLSso_UI {
 				<?php if ( $show_start ) : ?>
 					<button type="button" class="button button-primary dologin-kl-refresh"><?php esc_html_e( 'Start Pairing', 'dologin' ); ?></button>
 				<?php endif; ?>
+				<a class="button button-primary dologin-kl-open" hidden><?php esc_html_e( 'Open KeyLockr on This Device', 'dologin' ); ?></a>
+				<span class="dologin-kl-open-note" hidden><?php esc_html_e( 'After approval, KeyLockr returns you to this page automatically.', 'dologin' ); ?></span>
 				<?php if ( $hidden ) : ?>
 					<button type="button" class="button button-primary dologin-kl-repair" hidden><?php esc_html_e( 'Repair Connection', 'dologin' ); ?></button>
 				<?php endif; ?>
@@ -80,7 +84,7 @@ trait KLSso_UI {
 	public function bind_form() {
 		$status = self::current_user_status();
 		if ( ! self::configured() ) {
-			echo '<div class="dologin-warn">' . esc_html__( 'Enter and save the KeyLockr App Tag before linking an account.', 'dologin' ) . '</div>';
+			echo '<div class="dologin-warn">' . wp_kses_post( __( 'Enter and save the <code>KeyLockr App Tag</code> before linking an account.', 'dologin' ) ) . '</div>';
 			return;
 		}
 		$requirements = self::requirements();
@@ -115,12 +119,12 @@ trait KLSso_UI {
 					<?php endif; ?>
 				</div>
 				<?php if ( $relink ) : ?>
-					<div class="dologin-warn dologin-kl-key-note"><?php esc_html_e( 'The KeyLockr App Tag changed. Relink this account to the current App Tag before relying on it.', 'dologin' ); ?></div>
+					<div class="dologin-warn dologin-kl-key-note"><?php echo wp_kses_post( __( 'The <code>KeyLockr App Tag</code> changed. Select <code>Relink Connection</code> for the current <code>App Tag</code> before relying on it.', 'dologin' ) ); ?></div>
 				<?php elseif ( empty( $status['key_current'] ) ) : ?>
-					<div class="dologin-warn dologin-kl-key-note"><?php esc_html_e( 'This account has not been verified with the current KeyLockr connection identity. Verify the connection before relying on it.', 'dologin' ); ?></div>
+					<div class="dologin-warn dologin-kl-key-note"><?php echo wp_kses_post( __( 'This account has not been verified with the current KeyLockr connection identity. Select <code>Verify Connection</code> before relying on it.', 'dologin' ) ); ?></div>
 				<?php endif; ?>
 				<?php if ( self::force_enabled() ) : ?>
-					<div class="dologin-warn dologin-kl-force-note"><?php esc_html_e( 'Disable Force KeyLockr SSO before unlinking this account.', 'dologin' ); ?></div>
+					<div class="dologin-warn dologin-kl-force-note"><?php echo wp_kses_post( __( 'Disable <code>Force KeyLockr SSO</code> before unlinking this account.', 'dologin' ) ); ?></div>
 				<?php endif; ?>
 				<?php $this->pairing_panel( '', true, false ); ?>
 			<?php else : ?>
@@ -139,7 +143,7 @@ trait KLSso_UI {
 		}
 		?>
 		<h2><?php esc_html_e( 'KeyLockr SSO', 'dologin' ); ?></h2>
-		<table class="form-table" role="presentation">
+		<table class="form-table dologin-kl-profile" role="presentation">
 			<tbody>
 				<tr>
 					<th><?php esc_html_e( 'KeyLockr SSO', 'dologin' ); ?></th>
@@ -147,10 +151,10 @@ trait KLSso_UI {
 						<?php if ( self::configured() ) : ?>
 							<?php $this->bind_form(); ?>
 							<?php if ( empty( self::current_user_status()['bound'] ) ) : ?>
-								<p class="description"><?php esc_html_e( 'Select Start Pairing, then scan the QR code with KeyLockr; no KeyLockr ID needs to be entered manually.', 'dologin' ); ?></p>
+								<p class="description"><?php echo wp_kses_post( __( 'Select <code>Start Pairing</code>, then scan the QR code with KeyLockr; no <code>KeyLockr ID</code> needs to be entered manually.', 'dologin' ) ); ?></p>
 							<?php endif; ?>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Ask an administrator to configure the KeyLockr App Tag before linking an account.', 'dologin' ); ?></p>
+							<p class="description"><?php echo wp_kses_post( __( 'Ask an administrator to configure the <code>KeyLockr App Tag</code> before linking an account.', 'dologin' ) ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>

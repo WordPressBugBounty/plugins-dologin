@@ -23,7 +23,18 @@ trait KLSso_Keys {
 	}
 
 	/**
-	 * Rotate the KeyLockr client keys for the current WordPress site.
+	 * Return the X25519 service encryption public key for MyDeveloper.
+	 */
+	public static function site_encryption_public_key() {
+		$keys = self::site_keys();
+		if ( is_wp_error( $keys ) ) {
+			return $keys;
+		}
+		return base64_encode( sodium_crypto_box_publickey( $keys['box_kp'] ) );
+	}
+
+	/**
+	 * Rotate the KeyLockr site identity keys for the current WordPress site.
 	 */
 	public function reset_site_keys() {
 		$capability = apply_filters( 'dologin_admin_menu_access', 'manage_options' );
@@ -48,10 +59,11 @@ trait KLSso_Keys {
 
 		return REST::ok(
 			array(
-				'status'          => 'done',
-				'fingerprint'     => self::site_key_fingerprint_from_keys( $keys ),
-				'message'         => __( 'KeyLockr site keys were reset. Verify linked accounts again or complete a successful SSO login.', 'dologin' ),
-				'binding_message' => __( 'This account has not been verified with the current KeyLockr connection identity. Verify the connection before relying on it.', 'dologin' ),
+				'status'                => 'done',
+				'fingerprint'           => self::site_key_fingerprint_from_keys( $keys ),
+				'encryption_public_key' => base64_encode( sodium_crypto_box_publickey( $keys['box_kp'] ) ),
+				'message'               => __( 'KeyLockr site keys were reset. As the service owner, update Service key in the SSO Keys block in MyDeveloper, then verify linked accounts again or complete a successful SSO login.', 'dologin' ),
+				'binding_message'       => __( 'This account has not been verified with the current KeyLockr connection identity. Verify the connection before relying on it.', 'dologin' ),
 			)
 		);
 	}

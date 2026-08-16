@@ -215,10 +215,9 @@ trait KLSso_State {
 	private function assert_kps_action_phase( $state, $action ) {
 		$phase   = isset( $state['phase'] ) && is_string( $state['phase'] ) ? $state['phase'] : '';
 		$allowed = array(
-			'tmp_auth'    => array( 'connected', 'ping', 'app_auth_result' ),
-			'app_filekey' => array( 'connected', 'ping', 'app_req_filekey', 'app_filekey_result' ),
-			'app_write'   => array( 'connected', 'ping', 'app_set_data' ),
-			'app_read'    => array( 'connected', 'ping', 'app_get_data' ),
+			'tmp_auth'  => array( 'connected', 'ping', 'app_auth_result' ),
+			'app_write' => array( 'connected', 'ping', 'app_set_data' ),
+			'app_read'  => array( 'connected', 'ping', 'app_get_data' ),
 		);
 		if ( ! isset( $allowed[ $phase ] ) || ! is_string( $action ) || ! in_array( $action, $allowed[ $phase ], true ) ) {
 			throw new \Exception( __( 'Unexpected KeyLockr SSO message sequence.', 'dologin' ) );

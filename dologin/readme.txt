@@ -1,14 +1,14 @@
 === DoLogin Security ===
 Contributors: WPDO
-Tags: Login security, 2FA login, reCAPTCHA, limit login attempts, passwordless login
+Tags: Login security, 2FA login, Cloudflare Turnstile, limit login attempts, passwordless login
 Requires at least: 4.4
 Requires PHP: 5.6
-Tested up to: 7.0
-Stable tag: 4.8.3
+Tested up to: 7.1
+Stable tag: 5.0.10
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-Easy Login. 2FA login. KeyLockr SSO scan login. Passwordless login. reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Whitelist and Blacklist.
+Login security: KeyLockr SSO scan login, 2FA, passwordless login, Cloudflare Turnstile, GeoLocation/IP limits, whitelist and blacklist.
 
 == Description ==
 
@@ -75,6 +75,7 @@ The child site verifies the complete signed message with the public key already 
 
 * Fixed per-site signing and encryption keypairs let KeyLockr reuse the same backend-owned connection identity.
 * Existing signing-only key storage is upgraded atomically with one persistent encryption keypair.
+* The WordPress backend owns all private keys and KPS processing; the browser only opens the short-lived KeyLockr WebSocket and relays opaque signed, encrypted frames to the backend.
 * Incoming frames are signed, encrypted, timestamp-checked, replay-checked, rate-limited, and accepted only in the expected protocol phase.
 * Bind and Repair write the WordPress account hash to encrypted KeyLockr AppData, then read it back before completing.
 * Login requires exactly one WordPress user with the matching Safe ID and binding hash.
@@ -135,6 +136,12 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 5.0.10 - Aug 15 2026 =
+* 🍀 Added verified same-device KeyLockr login, simplified MyDeveloper guidance, and reduced login-page assets.
+* 🔐 Hardened KeyLockr SSO, 2FA replay cleanup, and uninstall data removal.
+* 🔐 Made only KeyLockr authorization denials and account-identity mismatches consume login retries, preventing protocol or transport errors from locking out an IP.
+* 🐞 Fixed stale same-device returns, WooCommerce forced-login flashes, token-error pages, and login-log feedback.
 
 = 4.8.3 - Jul 28 2026 =
 * 🐞 Kept valid KeyLockr site-key blobs read-only and limited storage migration to signing-only blobs, preventing avoidable login failures when no key material needs an upgrade.

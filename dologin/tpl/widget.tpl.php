@@ -9,7 +9,7 @@ namespace dologin;
 
 defined( 'WPINC' ) || exit;
 
-$dologin_list     = $this->cls( 'Auth' )->history_list( 20 );
+$dologin_list     = $this->cls( 'Auth' )->history_list( 20, 0 );
 $dologin_count    = $this->cls( 'Auth' )->count_list();
 $dologin_is_admin = current_user_can( 'manage_options' );
 
@@ -42,15 +42,15 @@ echo '<h2>' . esc_html__( 'Login Attempts Log', 'dologin' ) . '</h2>';
 <table class="wp-list-table striped dologin-widget-table">
 	<thead>
 		<tr>
-			<th>IP</th>
-			<th>Location</th>
-			<th>Date</th>
+			<th><?php esc_html_e( 'IP', 'dologin' ); ?></th>
+			<th><?php esc_html_e( 'GeoLocation', 'dologin' ); ?></th>
+			<th><?php esc_html_e( 'Date', 'dologin' ); ?></th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php if ( ! $dologin_list ) : ?>
 			<tr>
-				<td><?php esc_html_e( 'No list yet.', 'dologin' ); ?></td>
+				<td colspan="3"><?php esc_html_e( 'No list yet.', 'dologin' ); ?></td>
 			</tr>
 		<?php else : ?>
 			<?php

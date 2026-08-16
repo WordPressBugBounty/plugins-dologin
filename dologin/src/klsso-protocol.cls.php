@@ -12,7 +12,7 @@ defined( 'WPINC' ) || exit;
 
 trait KLSso_Protocol {
 	/**
-	 * Decode the file key returned by KeyLockr app_req_filekey.
+	 * Decode the file key included in the authorization completion.
 	 */
 	private function load_file_key( $state, $body ) {
 		$packed = $this->bin_value( isset( $body['data_filekey'] ) ? $body['data_filekey'] : '' );
@@ -21,17 +21,15 @@ trait KLSso_Protocol {
 		}
 
 		$data = KLSso_MsgPack::unpack( $packed );
-		if ( ! is_array( $data ) || ! isset( $data['encFileKey'], $data['nonceForKey'], $data['nonceForData'], $data['apEncPk'] ) ) {
+		if ( ! is_array( $data ) || ! isset( $data['encFileKey'], $data['nonceForKey'], $data['apEncPk'] ) ) {
 			throw new \Exception( __( 'Invalid KeyLockr app data filekey.', 'dologin' ) );
 		}
 		$enc_file_key   = $this->bin_value( $data['encFileKey'] );
 		$nonce_for_key  = $this->bin_value( $data['nonceForKey'] );
-		$nonce_for_data = $this->bin_value( $data['nonceForData'] );
 		$sender_pk      = $this->bin_value( $data['apEncPk'] );
 
 		if ( strlen( $enc_file_key ) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES + SODIUM_CRYPTO_BOX_MACBYTES
-			|| strlen( $nonce_for_key ) !== SODIUM_CRYPTO_BOX_NONCEBYTES
-			|| strlen( $nonce_for_data ) !== SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
+			|| strlen( $nonce_for_key ) !== SODIUM_CRYPTO_BOX_NONCEBYTES ) {
 			throw new \Exception( __( 'Invalid KeyLockr app data filekey.', 'dologin' ) );
 		}
 		if ( strlen( $sender_pk ) !== SODIUM_CRYPTO_BOX_PUBLICKEYBYTES ) {
@@ -98,7 +96,45 @@ trait KLSso_Protocol {
 	 * Build an error for a service without App Data Storage.
 	 */
 	private function appdata_disabled_error() {
-		return new \Exception( __( 'KeyLockr app data was not found. This usually means App Data Storage is disabled for this service. Open KeyLockr Developer, edit this App Tag, enable App Data Storage, and scan again.', 'dologin' ) );
+		return new \Exception( __( 'KeyLockr app data was not found. This usually means App Data Storage is disabled for this service. Open MyDeveloper, edit this App Tag, enable App Data Storage, and scan again.', 'dologin' ) );
+	}
+
+	/**
+	 * Build a terminal authorization-completion error.
+	 */
+	private function app_auth_terminal_error( $message, $authorization_denied = false ) {
+		return new \Exception( $message, $authorization_denied ? self::AUTH_DENIED_CODE : self::APP_AUTH_TERMINAL_CODE );
+	}
+
+	/**
+	 * Build an identity mismatch that counts only during a login session.
+	 */
+	private function login_identity_error( $message ) {
+		return new \Exception( $message, self::LOGIN_IDENTITY_CODE );
+	}
+
+	/**
+	 * Validate an unchanged KeyLockr SERIAL identifier.
+	 */
+	private function valid_identity_id( $value ) {
+		if ( ! is_string( $value ) || ! preg_match( '/^[1-9][0-9]{0,9}$/D', $value ) ) {
+			return false;
+		}
+		return strlen( $value ) < 10 || strcmp( $value, '2147483647' ) <= 0;
+	}
+
+	/**
+	 * Validate an unchanged 36-character KeyLockr handshake identifier.
+	 */
+	private function valid_tmp_id( $value ) {
+		return is_string( $value ) && 1 === preg_match( '/^[A-Za-z0-9-]{36}$/D', $value );
+	}
+
+	/**
+	 * Whether a terminal completion code explicitly says the user denied authorization.
+	 */
+	private function authorization_denied_code( $code ) {
+		return in_array( $code, array( 'authorization_denied', 'app_auth_denied', 'safe_auth_denied', 'denied' ), true );
 	}
 
 	/**
@@ -117,10 +153,10 @@ trait KLSso_Protocol {
 	private function handshake_error_message( $body ) {
 		$code = isset( $body['code'] ) && is_scalar( $body['code'] ) ? sanitize_text_field( (string) $body['code'] ) : 'unknown_error';
 		if ( 'sso_data_not_approved' === $code ) {
-			return __( 'KeyLockr App Data Storage is not approved for this App Tag. Enable it in KeyLockr Developer and try again.', 'dologin' );
+			return __( 'KeyLockr App Data Storage is not approved for this App Tag. Enable it in MyDeveloper and try again.', 'dologin' );
 		}
 		if ( in_array( $code, array( 'app_tag_invalid', 'sso_service_invalid' ), true ) ) {
-			return __( 'KeyLockr could not resolve this App Tag. Check the effective App Tag in KeyLockr Developer and try again.', 'dologin' );
+			return __( 'KeyLockr could not resolve this App Tag. Check the effective App Tag in MyDeveloper and try again.', 'dologin' );
 		}
 		return sprintf( __( 'KeyLockr handshake failed: %s', 'dologin' ), $code );
 	}
@@ -160,50 +196,6 @@ trait KLSso_Protocol {
 			'send'    => base64_encode( $this->seal_kps( $state, 'app_get_data', array() ) ),
 			'message' => __( 'KeyLockr app data changed while linking. Reading the latest version before retrying...', 'dologin' ),
 		);
-	}
-
-	/**
-	 * Call the backend app_verify endpoint to verify identity.
-	 */
-	private function app_verify( $state ) {
-		$res = wp_safe_remote_post(
-			self::api_base() . '/app_verify',
-			array(
-				'timeout'             => 15,
-				'redirection'         => 0,
-				'limit_response_size' => self::FRAME_MAX_BYTES,
-				'sslverify'           => true,
-				'headers' => array(
-					'Accept'       => 'application/json',
-					'Content-Type' => 'application/json',
-				),
-				'body'    => wp_json_encode(
-					array(
-						'app_tag' => $state['app_tag'],
-						'app_id'  => $state['app_id'],
-						'safe_id' => $state['safe_id'],
-						'sign_pk' => $state['sign_pk'],
-					)
-				),
-			)
-		);
-		if ( is_wp_error( $res ) ) {
-			return $res;
-		}
-		if ( (int) wp_remote_retrieve_response_code( $res ) < 200 || (int) wp_remote_retrieve_response_code( $res ) >= 300 ) {
-			return new \WP_Error( 'dologin_kl_sso_verify_status', __( 'KeyLockr app_verify returned an invalid response status.', 'dologin' ) );
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $res ), true );
-		if ( ! is_array( $body ) ) {
-			return new \WP_Error( 'dologin_kl_sso_verify_decode', __( 'Failed to decode KeyLockr app_verify response.', 'dologin' ) );
-		}
-		if ( ! isset( $body['_res'] ) || 'ok' !== $body['_res'] ) {
-			$code = isset( $body['code'] ) && is_scalar( $body['code'] ) ? sanitize_text_field( (string) $body['code'] ) : 'unknown_error';
-			return new \WP_Error( 'dologin_kl_sso_verify_error', sprintf( __( 'KeyLockr app_verify failed: %s', 'dologin' ), $code ) );
-		}
-
-		return $body;
 	}
 
 	/**
@@ -390,68 +382,6 @@ trait KLSso_Protocol {
 	private function timestamp_valid( $timestamp ) {
 		$now = time();
 		return $timestamp >= $now - self::CLOCK_PAST_LIMIT && $timestamp <= $now + self::CLOCK_FUTURE_LIMIT;
-	}
-
-	/**
-	 * Detect a public IP from ip.me. Family forcing works when WP uses the cURL transport.
-	 */
-	private static function fetch_public_ip( $family = '' ) {
-		$family = (string) $family;
-		$filter = null;
-		if ( in_array( $family, array( 'v4', 'v6' ), true ) && defined( 'CURLOPT_IPRESOLVE' ) ) {
-			$filter = function( $handle ) use ( $family ) {
-				if ( 'v4' === $family && defined( 'CURL_IPRESOLVE_V4' ) ) {
-					curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
-				}
-				if ( 'v6' === $family && defined( 'CURL_IPRESOLVE_V6' ) ) {
-					curl_setopt( $handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6 );
-				}
-			};
-			add_action( 'http_api_curl', $filter );
-		}
-
-		$res = wp_safe_remote_get(
-			self::PUBLIC_IP_URL,
-			array(
-				'timeout'             => 5,
-				'redirection'         => 2,
-				'limit_response_size' => 128,
-				'sslverify'           => true,
-				'headers'             => array( 'Accept' => 'text/plain' ),
-				'user-agent'          => 'DoLogin/' . Core::VER . '; ' . home_url(),
-			)
-		);
-
-		if ( $filter ) {
-			remove_action( 'http_api_curl', $filter );
-		}
-
-		if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
-			return self::server_address( $family );
-		}
-
-		$ip = trim( wp_remote_retrieve_body( $res ) );
-		if ( 'v4' === $family ) {
-			return filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ? $ip : self::server_address( $family );
-		}
-		if ( 'v6' === $family ) {
-			return filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ? $ip : self::server_address( $family );
-		}
-		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : self::server_address( $family );
-	}
-
-	/**
-	 * Use a publicly routable server address when external detection fails.
-	 */
-	private static function server_address( $family = '' ) {
-		$ip    = isset( $_SERVER['SERVER_ADDR'] ) ? trim( (string) $_SERVER['SERVER_ADDR'] ) : '';
-		$flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
-		if ( 'v4' === $family ) {
-			$flags |= FILTER_FLAG_IPV4;
-		} elseif ( 'v6' === $family ) {
-			$flags |= FILTER_FLAG_IPV6;
-		}
-		return filter_var( $ip, FILTER_VALIDATE_IP, $flags ) ? $ip : '';
 	}
 
 	/**

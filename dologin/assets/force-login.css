@@ -1,0 +1,6 @@
+/* Hide WooCommerce password controls before forced KeyLockr SSO forms render. */
+.dologin-kl-force-login .woocommerce-form-login > .woocommerce-form-row,
+.dologin-kl-force-login .woocommerce-form-login > .form-row,
+.dologin-kl-force-login .woocommerce-form-login > .woocommerce-LostPassword {
+	display: none;
+}

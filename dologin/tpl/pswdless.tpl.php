@@ -11,7 +11,7 @@ defined( 'WPINC' ) || exit;
 
 ?>
 <?php if ( KLSso::force_enabled() ) : ?>
-	<div class="notice notice-warning inline"><p><?php esc_html_e( 'Force KeyLockr SSO is enabled. Passwordless links remain manageable here but cannot be used to log in.', 'dologin' ); ?></p></div>
+	<div class="notice notice-warning inline"><p><?php echo wp_kses_post( __( '<code>Force KeyLockr SSO</code> is enabled. Passwordless links remain manageable here but cannot be used to log in.', 'dologin' ) ); ?></p></div>
 <?php endif; ?>
 <div class="dologin-relative">
 	<h3 class="dologin-title-short">
@@ -39,7 +39,13 @@ defined( 'WPINC' ) || exit;
 	</tr>
 	</thead>
 	<tbody>
-	<?php foreach ( $this->pswdless_log() as $dologin_v ) : ?>
+	<?php $dologin_pswdless_list = (array) $this->pswdless_log(); ?>
+	<?php if ( ! $dologin_pswdless_list ) : ?>
+		<tr class="no-items">
+			<td colspan="10"><?php esc_html_e( 'No list yet.', 'dologin' ); ?></td>
+		</tr>
+	<?php endif; ?>
+	<?php foreach ( $dologin_pswdless_list as $dologin_v ) : ?>
 		<tr>
 			<td><?php echo (int) $dologin_v->id; ?></td>
 			<td><?php echo esc_html( Util::readable_time( $dologin_v->dateline ) ); ?></td>

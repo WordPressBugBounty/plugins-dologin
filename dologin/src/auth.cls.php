@@ -34,7 +34,7 @@ class Auth extends Instance {
 		add_filter( 'authenticate', array( $this, 'authenticate' ), 2, 3 );
 		add_filter( 'authenticate', array( $this, 'enforce_klsso' ), PHP_INT_MAX, 3 );
 		add_action( 'application_password_did_authenticate', array( $this, 'allow_application_password' ), 10, 1 );
-		// Recaptcha validation
+		// Cloudflare Turnstile validation.
 		add_filter( 'registration_errors', array( $this, 'registration_errors' ) );
 		add_filter( 'lostpassword_errors', array( $this, 'lostpassword_errors' ) );
 		add_action( 'login_form_lostpassword', array( $this, 'redirect_password_reset' ), 0 );
@@ -62,7 +62,7 @@ class Auth extends Instance {
 	}
 
 	/**
-	 * Check recaptcha for register
+	 * Check Cloudflare Turnstile for registration
 	 *
 	 * @since 1.9
 	 * @access public
@@ -73,7 +73,7 @@ class Auth extends Instance {
 				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
+				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );
 
 				$errors->add( 'captcha_err', Lang::msg( $err_code ) );
 			}
@@ -83,7 +83,7 @@ class Auth extends Instance {
 	}
 
 	/**
-	 * Check recaptcha for lost password request
+	 * Check Cloudflare Turnstile for lost-password requests
 	 *
 	 * @since 1.9
 	 * @access public
@@ -94,7 +94,7 @@ class Auth extends Instance {
 				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
+				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );
 
 				$errors->add( 'captcha_err', Lang::msg( $err_code ) );
 			}
@@ -313,13 +313,13 @@ class Auth extends Instance {
 			}
 		}
 
-		// reCAPTCHA validate. Skip XML-RPC: machine clients cannot solve a captcha, and XML-RPC is already covered by the IP limiter + white/blacklist via check_xmlrpc().
+		// Validate Turnstile. Skip XML-RPC: machine clients cannot solve a challenge, and XML-RPC is already covered by the IP limiter + white/blacklist via check_xmlrpc().
 		if ( ! defined( 'DOLOGIN_ERR' ) && Conf::val( 'cf' ) && ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
 			try {
 				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
-				defined( 'debug' ) && debug( '❌ reCAPTCHA error: ' . $err_code );
+				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );
 
 				$error->add( 'captcha_err', Lang::msg( $err_code ) );
 				! defined( 'DOLOGIN_ERR' ) && define( 'DOLOGIN_ERR', true );

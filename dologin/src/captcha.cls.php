@@ -13,7 +13,7 @@ defined( 'WPINC' ) || exit;
 class Captcha extends Instance {
 
 	/**
-	 * Display recaptcha
+	 * Display Cloudflare Turnstile
 	 *
 	 * @since  1.6
 	 */
@@ -27,7 +27,7 @@ class Captcha extends Instance {
 	}
 
 	/**
-	 * Validate recaptcha
+	 * Validate Cloudflare Turnstile
 	 *
 	 * @since  1.6
 	 */
@@ -67,21 +67,23 @@ class Captcha extends Instance {
 		);
 
 		if ( is_wp_error( $res ) ) {
-			$error_message = $res->get_error_message();
-			throw new \Exception( esc_html( $error_message ) );
+			defined( 'debug' ) && debug( '❌ Turnstile transport error: ' . $res->get_error_message() );
+			throw new \Exception( 'captcha_transport_error' );
 		}
 
 		if ( 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+			defined( 'debug' ) && debug( '❌ Turnstile service HTTP status: ' . (int) wp_remote_retrieve_response_code( $res ) );
 			throw new \Exception( 'captcha_service_error' );
 		}
 
 		$res = json_decode( wp_remote_retrieve_body( $res ), true );
-		defined( 'debug' ) && debug( '2fa challenge res:', $res );
+		defined( 'debug' ) && debug( 'Turnstile verification response:', $res );
 
 		if ( empty( $res['success'] ) ) {
-			$err_code = ! empty( $res['error-codes'][0] ) ? $res['error-codes'][0] : 'error';
+			$err_code = ! empty( $res['error-codes'][0] ) && is_string( $res['error-codes'][0] ) ? sanitize_key( $res['error-codes'][0] ) : 'error';
+			$err_code = $err_code ? $err_code : 'error';
 
-			throw new \Exception( esc_html( $err_code ) );
+			throw new \Exception( $err_code );
 		}
 
 		// Mark this session as trusted, to prevent duplicate check when submitting 2FA.

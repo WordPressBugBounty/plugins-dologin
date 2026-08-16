@@ -46,15 +46,15 @@ class Pswdless extends Instance {
 
 		$username = 'N/A';
 		if ( KLSso::force_enabled() ) {
-			exit( 'dologin_kl_sso_required' );
+			$this->_error_page( 'dologin_kl_sso_required', 403 );
 		}
 
 		// This endpoint bypasses wp-login and must apply the same IP rules and failure limits.
 		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
-			exit( 'dologin_ip_denied' );
+			$this->_error_page( 'dologin_ip_denied', 403 );
 		}
 		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
-			exit( 'dologin_rate_limited' );
+			$this->_error_page( 'dologin_rate_limited', 429 );
 		}
 
 		// Magic-link endpoint authenticated by the secret token in the URL, not a nonce.
@@ -84,11 +84,11 @@ class Pswdless extends Instance {
 		}
 
 		if ( $row->active != 1 ) {
-			exit( 'dologin_link_used' );
+			$this->_error_page( 'dologin_link_used', 410 );
 		}
 
 		if ( $row->expired_at < time() ) {
-			exit( 'dologin_link_expired' );
+			$this->_error_page( 'dologin_link_expired', 410 );
 		}
 
 		$confirm_nonce_action = 'dologin_pswdless_confirm_' . hash( 'sha256', $raw_token );
@@ -115,7 +115,7 @@ class Pswdless extends Instance {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
 		$updated = $wpdb->query( $wpdb->prepare( $q, array( time(), $pid ) ) );
 		if ( 1 !== $updated ) {
-			exit( 'dologin_link_used' );
+			$this->_error_page( 'dologin_link_used', 410 );
 		}
 
 		// Login.
@@ -137,6 +137,15 @@ class Pswdless extends Instance {
 	private function _failed_login( $username ) {
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- firing the WordPress core hook.
 		do_action( 'wp_login_failed', $username );
+		$this->_error_page( 'dologin_link_invalid', 403 );
+	}
+
+	/**
+	 * Complete a rejected public token request with a localized page.
+	 */
+	private function _error_page( $tag, $status_code ) {
+		GUI::error_page( $tag, $status_code );
+		exit;
 	}
 
 	/**

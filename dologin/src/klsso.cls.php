@@ -17,32 +17,33 @@ class KLSso extends Instance {
 	use KLSso_State;
 	use KLSso_UI;
 
-	const META_SAFE_ID       = 'dologin_kl_safe_id';
-	const META_NICKNAME      = 'dologin_kl_nickname';
-	const META_APP_HASH      = 'dologin_kl_app_hash';
-	const META_SITE_KEY_FP   = 'dologin_kl_site_key_fingerprint';
-	const META_APP_TAG       = 'dologin_kl_app_tag';
-	const TRANSIENT_PREFIX   = 'dologin_kl_sso_';
-	const CLOCK_CACHE        = 'dologin_kl_sso_clock_ok';
-	const SERVER_KEYS_CACHE  = 'dologin_kl_sso_server_keys';
-	const SERVER_IPS_CACHE   = 'dologin_kl_sso_server_ips_2';
-	const SITE_KEYS_OPTION   = 'dologin.kl_sso_site_keys';
-	const SESSION_TTL        = 600;
-	const START_WINDOW       = 60;
-	const START_LIMIT        = 6;
-	const FRAME_LIMIT        = 64;
-	const FRAME_MAX_BYTES    = 65536;
-	const FRAME_IP_LIMIT       = 120;
-	const CLOCK_PAST_LIMIT     = 600;
-	const CLOCK_FUTURE_LIMIT   = 180;
-	const REPAIR_REQUIRED_CODE = 4702;
+	const META_SAFE_ID             = 'dologin_kl_safe_id';
+	const META_NICKNAME            = 'dologin_kl_nickname';
+	const META_APP_HASH            = 'dologin_kl_app_hash';
+	const META_SITE_KEY_FP         = 'dologin_kl_site_key_fingerprint';
+	const META_APP_TAG             = 'dologin_kl_app_tag';
+	const TRANSIENT_PREFIX         = 'dologin_kl_sso_';
+	const CLOCK_CACHE              = 'dologin_kl_sso_clock_ok';
+	const SERVER_KEYS_CACHE        = 'dologin_kl_sso_server_keys';
+	const SITE_KEYS_OPTION         = 'dologin.kl_sso_site_keys';
+	const SESSION_TTL              = 600;
+	const START_WINDOW             = 60;
+	const START_LIMIT              = 6;
+	const FRAME_LIMIT              = 64;
+	const FRAME_MAX_BYTES          = 65536;
+	const FRAME_IP_LIMIT           = 120;
+	const CLOCK_PAST_LIMIT         = 600;
+	const CLOCK_FUTURE_LIMIT       = 180;
+	const REPAIR_REQUIRED_CODE     = 4702;
+	const APP_AUTH_TERMINAL_CODE   = 4703;
+	const AUTH_DENIED_CODE         = 4704;
+	const LOGIN_IDENTITY_CODE      = 4705;
 	const APPDATA_CAS_RETRY_LIMIT = 1;
-	const API_BASE           = 'https://api.keylockr.app/v3';
-	const WS_URL             = 'wss://api.keylockr.app/v3/ws';
-	const WWW_URL            = 'https://keylockr.app';
-	const DEVELOPER_ADD_URL  = 'https://my.keylockr.app/developer_sso_add';
-	const PUBLIC_IP_URL      = 'https://ip.me';
-	const QR_SCHEME_TEMPLATE = 'keylockr://sso?tmp_id=%s';
+	const API_BASE                 = 'https://api.keylockr.app/v3';
+	const WS_URL                   = 'wss://api.keylockr.app/v3/ws';
+	const WWW_URL                  = 'https://keylockr.app';
+	const DEVELOPER_ADD_URL        = 'https://my.keylockr.app/developer_sso_add';
+	const QR_SCHEME_TEMPLATE       = 'keylockr://sso?tmp_id=%s';
 
 	/**
 	 * Register hooks.
@@ -142,27 +143,6 @@ class KLSso extends Instance {
 		$hash = hash_hmac( 'sha256', 'dologin-kl-user|' . home_url() . '|' . $uid, wp_salt( 'auth' ) );
 		update_user_meta( $uid, self::META_APP_HASH, $hash );
 		return $hash;
-	}
-
-	/**
-	 * Public server IPs detected from this server for the KeyLockr allowlist UI.
-	 */
-	public static function server_ips() {
-		$cached = get_transient( self::SERVER_IPS_CACHE );
-		if ( is_array( $cached ) ) {
-			return $cached;
-		}
-
-		$ips = array();
-		foreach ( array( 'v4', 'v6', '' ) as $family ) {
-			$ip = self::fetch_public_ip( $family );
-			if ( $ip && ! in_array( $ip, $ips, true ) ) {
-				$ips[] = $ip;
-			}
-		}
-
-		set_transient( self::SERVER_IPS_CACHE, $ips, $ips ? 12 * HOUR_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
-		return $ips;
 	}
 
 	/**
@@ -365,8 +345,8 @@ class KLSso extends Instance {
 			return REST::err( is_array( $decoded ) ? $this->handshake_error_message( $decoded ) : __( 'KeyLockr handshake failed.', 'dologin' ) );
 		}
 
-		$tmp_id = empty( $decoded['tmp_id'] ) || ! is_scalar( $decoded['tmp_id'] ) ? '' : sanitize_text_field( (string) $decoded['tmp_id'] );
-		if ( ! $tmp_id ) {
+		$tmp_id = isset( $decoded['tmp_id'] ) && is_string( $decoded['tmp_id'] ) ? $decoded['tmp_id'] : '';
+		if ( ! $this->valid_tmp_id( $tmp_id ) ) {
 			return REST::err( __( 'KeyLockr handshake did not return tmp_id.', 'dologin' ) );
 		}
 
@@ -375,9 +355,9 @@ class KLSso extends Instance {
 			'phase'                => 'tmp_auth',
 			'user_id'              => get_current_user_id(),
 			'id'                   => 'tmp.' . $tmp_id,
+			'tmp_id'               => $tmp_id,
 			'app_tag'              => $app_tag,
 			'site_key_fingerprint' => self::site_key_fingerprint_from_keys( $site_keys ),
-			'sign_pk'              => base64_encode( $sign_pk ),
 			'sign_sk'              => base64_encode( $sign_sk ),
 			'enc_sk'               => base64_encode( $enc_sk ),
 			'server_enc_pk'        => base64_encode( $keys['enc_pk'] ),
@@ -397,7 +377,7 @@ class KLSso extends Instance {
 	}
 
 	/**
-	 * Process a KeyLockr WS frame forwarded by the browser.
+	 * Process a KeyLockr WebSocket frame forwarded by the browser.
 	 */
 	public function frame( $request ) {
 		$raw_state = $request->get_param( 'state' );
@@ -423,7 +403,7 @@ class KLSso extends Instance {
 	}
 
 	/**
-	 * Process one frame while holding the state lock.
+	 * Process one forwarded frame while holding the state lock.
 	 */
 	private function process_frame( $state_id, $frame ) {
 		$state = $this->load_state( $state_id );
@@ -447,7 +427,6 @@ class KLSso extends Instance {
 		$state['frame_count'] = isset( $state['frame_count'] ) ? (int) $state['frame_count'] + 1 : 1;
 		if ( $state['frame_count'] > self::FRAME_LIMIT || strlen( $frame ) > ( self::FRAME_MAX_BYTES * 2 ) ) {
 			$this->delete_state( $state_id );
-			$this->fail_login_if_needed( $state );
 			return REST::err( __( 'KeyLockr SSO frame limit exceeded.', 'dologin' ) );
 		}
 
@@ -469,16 +448,23 @@ class KLSso extends Instance {
 			list( $action, $body ) = $this->open_kps( $state, $bytes );
 			$res                  = $this->handle_kps_action( $state, $action, $body );
 		} catch ( \Exception $ex ) {
-			$this->save_state( $state_id, $state );
-			$this->fail_login_if_needed( $state );
+			if ( $this->is_terminal_kps_error( $ex ) ) {
+				$this->delete_state( $state_id );
+			} elseif ( ! $this->save_state( $state_id, $state ) ) {
+				$this->delete_state( $state_id );
+				return REST::err( __( 'Failed to store KeyLockr SSO session.', 'dologin' ) );
+			}
+			$this->fail_login_if_needed( $state, $ex );
 			$error = REST::err( $ex->getMessage() );
 			if ( self::REPAIR_REQUIRED_CODE === $ex->getCode() && isset( $state['mode'] ) && 'verify' === $state['mode'] ) {
 				$error['repair'] = true;
 			}
 			return $error;
 		} catch ( \Throwable $ex ) {
-			$this->save_state( $state_id, $state );
-			$this->fail_login_if_needed( $state );
+			if ( ! $this->save_state( $state_id, $state ) ) {
+				$this->delete_state( $state_id );
+				return REST::err( __( 'Failed to store KeyLockr SSO session.', 'dologin' ) );
+			}
 			return REST::err( __( 'Invalid KeyLockr SSO frame.', 'dologin' ) );
 		}
 
@@ -489,7 +475,6 @@ class KLSso extends Instance {
 			$this->delete_state( $state_id );
 			return REST::err( __( 'Failed to store KeyLockr SSO session.', 'dologin' ) );
 		}
-
 		return REST::ok( $res );
 	}
 
@@ -505,6 +490,9 @@ class KLSso extends Instance {
 		if ( ! isset( $body['_res'] ) || 'ok' !== $body['_res'] ) {
 			$code = isset( $body['code'] ) && is_scalar( $body['code'] ) ? sanitize_text_field( (string) $body['code'] ) : 'unknown_error';
 			if ( isset( $body['_res'] ) && 'err' === $body['_res'] ) {
+				if ( 'app_auth_result' === $action && $this->authorization_denied_code( $code ) ) {
+					throw $this->app_auth_terminal_error( sprintf( __( 'KeyLockr authorization failed: %s', 'dologin' ), $code ), true );
+				}
 				if ( 'app_file_not_found' === $code ) {
 					throw $this->appdata_disabled_error();
 				}
@@ -532,94 +520,105 @@ class KLSso extends Instance {
 		}
 
 		if ( 'app_auth_result' === $action ) {
-			if ( ! isset( $body['status'] ) || 'done' !== $body['status'] ) {
-				throw new \Exception( __( 'Invalid KeyLockr SSO response.', 'dologin' ) );
+			$tmp_id = isset( $body['tmp_id'] ) && is_string( $body['tmp_id'] ) ? $body['tmp_id'] : '';
+			if ( empty( $state['tmp_id'] ) || '' === $tmp_id || ! hash_equals( $state['tmp_id'], $tmp_id ) ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr authorization did not match this login request.', 'dologin' ) );
 			}
-			$state['app_id'] = isset( $body['app_id'] ) && is_scalar( $body['app_id'] )
-				? sanitize_text_field( (string) $body['app_id'] )
-				: '';
-			$state['safe_id'] = isset( $body['safe_id'] ) && is_scalar( $body['safe_id'] )
-				? sanitize_text_field( (string) $body['safe_id'] )
-				: '';
-			if ( ! $state['app_id'] || ! $state['safe_id'] ) {
-				throw new \Exception( __( 'KeyLockr did not return SSO identity.', 'dologin' ) );
+
+			$status = isset( $body['status'] ) && is_string( $body['status'] ) ? $body['status'] : '';
+			if ( 'error' === $status ) {
+				$code = isset( $body['code'] ) && is_string( $body['code'] ) ? trim( $body['code'] ) : '';
+				if ( '' === $code ) {
+					throw $this->app_auth_terminal_error( __( 'KeyLockr returned an invalid authorization error.', 'dologin' ) );
+				}
+				if ( 'app_auth_result_too_large' === $code ) {
+					throw $this->app_auth_terminal_error( __( 'KeyLockr authorization result was too large. Reduce the service payload and scan again.', 'dologin' ) );
+				}
+				throw $this->app_auth_terminal_error(
+					sprintf( __( 'KeyLockr authorization failed: %s', 'dologin' ), sanitize_text_field( $code ) ),
+					$this->authorization_denied_code( $code )
+				);
+			}
+			if ( 'done' !== $status ) {
+				throw $this->app_auth_terminal_error( __( 'Invalid KeyLockr SSO response.', 'dologin' ) );
+			}
+
+			$app_id  = isset( $body['app_id'] ) && is_string( $body['app_id'] ) ? $body['app_id'] : '';
+			$safe_id = isset( $body['safe_id'] ) && is_string( $body['safe_id'] ) ? $body['safe_id'] : '';
+			if ( ! $this->valid_identity_id( $app_id ) || ! $this->valid_identity_id( $safe_id ) ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr did not return SSO identity.', 'dologin' ) );
 			}
 			$capabilities = $this->response_capabilities( $body );
 			if ( false === $capabilities ) {
-				throw new \Exception( __( 'Invalid KeyLockr SSO response.', 'dologin' ) );
-			}
-			if ( ! in_array( 'app_data', $capabilities, true ) ) {
-				throw $this->appdata_disabled_error();
+				throw $this->app_auth_terminal_error( __( 'Invalid KeyLockr SSO response.', 'dologin' ) );
 			}
 			sort( $capabilities, SORT_STRING );
 			if ( array( 'app_data', 'sso' ) !== $capabilities ) {
-				throw new \Exception( __( 'KeyLockr returned unexpected SSO capabilities.', 'dologin' ) );
-			}
-			if ( ! isset( $body['data_plain'] )
-				|| ( ! is_string( $body['data_plain'] ) && ! ( $body['data_plain'] instanceof KLSso_MsgPack_Bin ) )
-				|| '' === $this->bin_value( $body['data_plain'] ) ) {
-				throw $this->appdata_disabled_error();
-			}
-			$state['data_ver'] = $this->appdata_version( $body );
-
-			$verify = $this->app_verify( $state );
-			if ( is_wp_error( $verify ) ) {
-				throw new \Exception( $verify->get_error_message() );
-			}
-			if ( ! isset( $verify['valid'] ) || true !== $verify['valid'] ) {
-				throw new \Exception( __( 'KeyLockr SSO identity verification failed.', 'dologin' ) );
+				throw $this->app_auth_terminal_error( __( 'KeyLockr returned unexpected SSO capabilities.', 'dologin' ) );
 			}
 
-			$state['verified'] = true;
-			$state['nickname'] = isset( $verify['nickname'] ) && is_scalar( $verify['nickname'] )
-				? sanitize_text_field( (string) $verify['nickname'] )
+			try {
+				$data_ver = $this->appdata_version( $body );
+			} catch ( \Exception $ex ) {
+				throw $this->app_auth_terminal_error( $ex->getMessage() );
+			}
+			if ( array_key_exists( 'data_deferred', $body ) && true !== $body['data_deferred'] ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr returned an invalid deferred app data flag.', 'dologin' ) );
+			}
+			$data_deferred = isset( $body['data_deferred'] ) && true === $body['data_deferred'];
+			if ( $data_deferred && ( array_key_exists( 'data_plain', $body ) || array_key_exists( 'data_encrypted', $body ) ) ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr returned app data fields with a deferred result.', 'dologin' ) );
+			}
+			if ( ! $data_deferred && array_key_exists( 'data_encrypted', $body )
+				&& ! is_string( $body['data_encrypted'] )
+				&& ! ( $body['data_encrypted'] instanceof KLSso_MsgPack_Bin ) ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr returned invalid encrypted app data.', 'dologin' ) );
+			}
+
+			if ( ! isset( $body['data_filekey'] )
+				|| ( ! is_string( $body['data_filekey'] ) && ! ( $body['data_filekey'] instanceof KLSso_MsgPack_Bin ) ) ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr did not return the direct app data filekey required by this site.', 'dologin' ) );
+			}
+			$packed_file_key = $this->bin_value( $body['data_filekey'] );
+			if ( '' === $packed_file_key ) {
+				throw $this->app_auth_terminal_error( __( 'KeyLockr did not return the direct app data filekey required by this site.', 'dologin' ) );
+			}
+			try {
+				$file_key = $this->load_file_key( $state, $body );
+			} catch ( \Exception $ex ) {
+				throw $this->app_auth_terminal_error( $ex->getMessage() );
+			}
+
+			$state['app_id']       = $app_id;
+			$state['safe_id']      = $safe_id;
+			$state['data_ver']     = $data_ver;
+			$state['data_filekey'] = base64_encode( $packed_file_key );
+			$state['verified']     = true;
+			$state['nickname']     = isset( $body['user_nickname'] ) && is_string( $body['user_nickname'] )
+				? sanitize_text_field( $body['user_nickname'] )
 				: '';
-			$state['id']       = 'app.' . $state['app_id'];
-			$state['phase']    = 'app_filekey';
+			$state['id']           = 'app.' . $app_id;
+			$state['phase']        = 'app_read';
 
-			return array(
-				'status'  => 'reconnect',
-				'ws_url'  => $this->ws_url_for( $state['id'], base64_decode( $state['sign_sk'] ) ),
-				'send'    => base64_encode( $this->seal_kps( $state, 'app_req_filekey', array() ) ),
-				'message' => __( 'KeyLockr authorized. Requesting app data verification...', 'dologin' ),
-			);
-		}
-
-		if ( 'app_req_filekey' === $action || 'app_filekey_result' === $action ) {
-			$status = isset( $body['status'] ) && is_scalar( $body['status'] ) ? sanitize_key( (string) $body['status'] ) : '';
-			if ( 'safe_auth_required' === $status ) {
-				return array(
-					'status'  => 'waiting',
-					'message' => __( 'Unlock KeyLockr on your phone and approve app data access.', 'dologin' ),
-				);
-			}
-			if ( 'denied' === $status ) {
-				throw new \Exception( __( 'KeyLockr app data access was denied.', 'dologin' ) );
-			}
-			if ( 'done' !== $status ) {
-				throw new \Exception( __( 'Unexpected KeyLockr app data status.', 'dologin' ) );
-			}
-
-			$state['data_ver']     = $this->appdata_version( $body );
-			$file_key              = $this->load_file_key( $state, $body );
-			$state['data_filekey'] = base64_encode( $this->bin_value( $body['data_filekey'] ) );
 			try {
 				if ( $this->appdata_write_mode( $state ) && empty( $state['appdata_written'] ) ) {
 					$res            = $this->write_appdata( $state, $file_key );
 					$state['phase'] = 'app_write';
+					$res['status']   = 'reconnect';
+					$res['ws_url']   = $this->ws_url_for( $state['id'], base64_decode( $state['sign_sk'] ) );
 					return $res;
 				}
-				if ( array_key_exists( 'data_enc', $body ) ) {
-					$data_enc = $this->bin_value( $body['data_enc'] );
+				if ( ! $data_deferred && array_key_exists( 'data_encrypted', $body ) ) {
+					$data_enc = $this->bin_value( $body['data_encrypted'] );
 					return $this->process_appdata( $state, $data_enc, $file_key );
 				}
 			} finally {
 				$this->clear_file_key( $file_key );
 			}
 
-			$state['phase'] = 'app_read';
 			return array(
-				'status'  => 'send',
+				'status'  => 'reconnect',
+				'ws_url'  => $this->ws_url_for( $state['id'], base64_decode( $state['sign_sk'] ) ),
 				'send'    => base64_encode( $this->seal_kps( $state, 'app_get_data', array() ) ),
 				'message' => __( 'Reading KeyLockr app data...', 'dologin' ),
 			);
@@ -716,7 +715,7 @@ class KLSso extends Instance {
 			if ( 'verify' === $state['mode'] ) {
 				throw $this->repair_required_error();
 			}
-			throw new \Exception( __( 'Please link this WordPress account with KeyLockr SSO first.', 'dologin' ) );
+			throw $this->login_identity_error( __( 'Please link this WordPress account with KeyLockr SSO first.', 'dologin' ) );
 		}
 		$state['app_hash'] = (string) $data['hash'];
 		return $this->complete_verified_session( $state );
@@ -870,13 +869,13 @@ class KLSso extends Instance {
 			)
 		);
 		if ( 1 !== count( $users ) ) {
-			throw new \Exception( __( 'The KeyLockr account link is missing or ambiguous.', 'dologin' ) );
+			throw $this->login_identity_error( __( 'The KeyLockr account link is missing or ambiguous.', 'dologin' ) );
 		}
 
 		$user = $users[0];
 		$expected_hash = get_user_meta( $user->ID, self::META_APP_HASH, true );
 		if ( ! $expected_hash || empty( $state['app_hash'] ) || ! hash_equals( (string) $expected_hash, (string) $state['app_hash'] ) ) {
-			throw new \Exception( __( 'KeyLockr app data hash does not match this WordPress account.', 'dologin' ) );
+			throw $this->login_identity_error( __( 'KeyLockr app data hash does not match this WordPress account.', 'dologin' ) );
 		}
 		$state['app_hash_ok'] = true;
 		update_user_meta( $user->ID, self::META_SITE_KEY_FP, $state['site_key_fingerprint'] );
@@ -927,10 +926,26 @@ class KLSso extends Instance {
 	/**
 	 * Count failed SSO login attempts when appropriate.
 	 */
-	private function fail_login_if_needed( $state ) {
-		if ( is_array( $state ) && isset( $state['mode'] ) && 'login' === $state['mode'] ) {
+	private function fail_login_if_needed( $state, $exception ) {
+		$code = $exception instanceof \Exception ? $exception->getCode() : 0;
+		if ( is_array( $state )
+			&& isset( $state['mode'] )
+			&& 'login' === $state['mode']
+			&& in_array( $code, array( self::AUTH_DENIED_CODE, self::LOGIN_IDENTITY_CODE ), true ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- firing WordPress core failure hook.
 			do_action( 'wp_login_failed', 'keylockr_sso' );
 		}
+	}
+
+	/**
+	 * Whether a classified protocol error has ended this short-lived session.
+	 */
+	private function is_terminal_kps_error( $exception ) {
+		return $exception instanceof \Exception
+			&& in_array(
+				$exception->getCode(),
+				array( self::APP_AUTH_TERMINAL_CODE, self::AUTH_DENIED_CODE, self::LOGIN_IDENTITY_CODE ),
+				true
+			);
 	}
 }

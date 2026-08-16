@@ -1,4 +1,7 @@
 document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).ready( function( $ ) {
+	var dologin_kl_copy_feedback_ms = 2000;
+	var dologin_kl_copy_reset_timer = null;
+
 	function dologin_keycode( num ) {
 		var num = num || 13 ;
 		var code = window.event ? event.keyCode : event.which ;
@@ -48,6 +51,12 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		});
 	});
 
+	$( '.dologin-clear-log' ).click( function( event ) {
+		if ( ! window.confirm( dologin_admin.clear_log_confirm ) ) {
+			event.preventDefault();
+		}
+	} );
+
 	$( '#dologin_get_ip' ).click( function( e ) {
 		e.preventDefault();
 		var $button = $( this );
@@ -73,10 +82,42 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		} );
 	} );
 
+	function dologin_clearPublicKeyCopyFeedback() {
+		if ( dologin_kl_copy_reset_timer ) {
+			window.clearTimeout( dologin_kl_copy_reset_timer );
+			dologin_kl_copy_reset_timer = null;
+		}
+		return $( '.dologin-kl-copy-status' ).attr( 'class', 'dologin-kl-copy-status' ).text( '' );
+	}
+
+	function dologin_resetPublicKeyCopyButton() {
+		dologin_clearPublicKeyCopyFeedback();
+		var $button = $( '.dologin-kl-copy-public-key' );
+		if ( ! $button.length ) {
+			$button = $( '<button>' )
+				.attr( 'type', 'button' )
+				.addClass( 'button dologin-kl-copy-public-key' )
+				.insertAfter( '#dologin-kl-encryption-public-key' );
+		}
+		return $button.text( dologin_admin.copy_public_key ).prop( 'disabled', false );
+	}
+
+	function dologin_showPublicKeyCopyFeedback( $button, message, copied ) {
+		var $status = dologin_clearPublicKeyCopyFeedback();
+		$button.prop( 'disabled', false );
+		$status
+			.addClass( copied ? 'dologin-success' : 'dologin-danger' )
+			.text( message );
+		dologin_kl_copy_reset_timer = window.setTimeout( function() {
+			dologin_resetPublicKeyCopyButton();
+		}, dologin_kl_copy_feedback_ms );
+	}
+
 	$( '.dologin-kl-reset-keys' ).click( function() {
 		if ( ! window.confirm( dologin_admin.reset_keys_confirm ) ) {
 			return;
 		}
+		dologin_clearPublicKeyCopyFeedback();
 		var $button = $( this );
 		var $status = $( '.dologin-kl-site-key-status' );
 		$button.prop( 'disabled', true );
@@ -94,6 +135,8 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 				return;
 			}
 			$( '#dologin-kl-site-key-fingerprint' ).text( data.fingerprint );
+			$( '.dologin-kl-encryption-public-key' ).text( data.encryption_public_key );
+			dologin_resetPublicKeyCopyButton();
 			$status.attr( 'class', 'dologin-kl-site-key-status dologin-success' ).text( data.message );
 			if ( $( '.dologin-kl-account' ).length && data.binding_message ) {
 				var $note = $( '.dologin-kl-key-note' );
@@ -109,23 +152,54 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		} );
 	} );
 
-	function dologin_copyToClipboard(text) {
-	    var $temp = $("<input>");
-	    $("body").append($temp);
-	    $temp.val(text).select();
-	    document.execCommand("copy");
-	    $temp.remove();
+	$( document ).on( 'click', '.dologin-kl-copy-public-key', function() {
+		var $button = $( this );
+		var text = $( '#dologin-kl-encryption-public-key' ).text();
+		dologin_clearPublicKeyCopyFeedback();
+		$button.prop( 'disabled', true );
+		dologin_copyToClipboard( text ).done( function( copied ) {
+			if ( text !== $( '#dologin-kl-encryption-public-key' ).text() ) {
+				dologin_resetPublicKeyCopyButton();
+				return;
+			}
+			dologin_showPublicKeyCopyFeedback( $button, copied ? dologin_admin.copied : dologin_admin.copy_failed, copied );
+		} );
+	} );
+
+	function dologin_copyToClipboardFallback( text ) {
+		var copied = false;
+		var $temp = $( '<textarea>' )
+			.attr( 'readonly', 'readonly' )
+			.css( { position: 'fixed', left: '-9999px', opacity: 0 } )
+			.appendTo( 'body' )
+			.val( text );
+		$temp[ 0 ].select();
+		try {
+			copied = document.execCommand( 'copy' );
+		} catch ( error ) {
+			copied = false;
+		}
+		$temp.remove();
+		return copied;
 	}
 
-	function dologin_copy() {
-		var ori_data_title = $( this ).data( 'title' );
-		// reset all data-title
-		$( '.dologin_pswd_link' ).attr( 'data-title', ori_data_title );
-		$( this ).attr( 'data-title', 'Copied!' );
-
-		dologin_copyToClipboard( $( this ).text() );
+	function dologin_copyToClipboard( text ) {
+		var deferred = $.Deferred();
+		var fallback = function() {
+			deferred.resolve( dologin_copyToClipboardFallback( text ) );
+		};
+		if ( navigator.clipboard && typeof navigator.clipboard.writeText === 'function' ) {
+			try {
+				navigator.clipboard.writeText( text ).then( function() {
+					deferred.resolve( true );
+				}, fallback );
+			} catch ( error ) {
+				fallback();
+			}
+		} else {
+			fallback();
+		}
+		return deferred.promise();
 	}
-
-	$( '.dologin_pswd_link' ).click( dologin_copy );
 
 } ); } );

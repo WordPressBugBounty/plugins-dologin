@@ -13,8 +13,8 @@ $dologin_gui = $this->cls( 'GUI' );
 
 $dologin_current_user_2fa = $this->cls( 'TwoFA' )->current_status();
 $dologin_kl_requirements  = KLSso::requirements();
-$dologin_kl_server_ips    = KLSso::server_ips();
 $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
+$dologin_kl_public_key    = KLSso::site_encryption_public_key();
 
 ?>
 <form method="post" action="<?php echo esc_url( menu_page_url( 'dologin', false ) ); ?>" class="dologin-relative">
@@ -98,44 +98,117 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 				<td>
 					<?php $dologin_gui->build_input( 'kl_sso_svc_id' ); ?>
 					<div class="dologin-desc">
-						<?php esc_html_e( 'Copy the effective App Tag from KeyLockr. If no custom App Tag is set, use the decimal Service ID.', 'dologin' ); ?>
+						<?php echo wp_kses_post( __( 'Copy the effective <code>App Tag</code> from KeyLockr. If no custom <code>App Tag</code> is set, use the decimal <code>Service ID</code>.', 'dologin' ) ); ?>
 					</div>
 					<div class="dologin-desc dologin-kl-setup">
-						<strong><?php esc_html_e( 'Quick Setup', 'dologin' ); ?></strong>
-						<ol>
-							<li>
-								<a href="<?php echo esc_url( KLSso::DEVELOPER_ADD_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Create a KeyLockr SSO service', 'dologin' ); ?></a>.
-								<?php esc_html_e( 'Keep App Data Storage enabled and add these Server IPs:', 'dologin' ); ?>
-								<?php if ( $dologin_kl_server_ips ) : ?>
-									<?php foreach ( $dologin_kl_server_ips as $dologin_kl_server_ip ) : ?>
-										<code><?php echo esc_html( $dologin_kl_server_ip ); ?></code>
-									<?php endforeach; ?>
-								<?php else : ?>
-									<span class="dologin-warn"><?php esc_html_e( 'Automatic detection failed. Enter this server outbound public IP in KeyLockr manually and reload in a few minutes to retry.', 'dologin' ); ?></span>
+						<p class="dologin-kl-mydev-intro">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: 1: opening link tag, 2: closing link tag. */
+									__( '%1$sCreate a KeyLockr SSO service in MyDeveloper%2$s, or open an existing service, then use these settings.', 'dologin' ),
+									'<a href="' . esc_url( KLSso::DEVELOPER_ADD_URL ) . '" target="_blank" rel="noopener noreferrer">',
+									'</a>'
+								)
+							);
+							?>
+						</p>
+
+						<div class="dologin-kl-key-panel">
+							<div class="dologin-kl-key-row">
+								<strong class="dologin-kl-key-label"><?php esc_html_e( 'Service Encryption Public Key (X25519, Base64)', 'dologin' ); ?></strong>
+								<div class="dologin-kl-key-value">
+									<?php if ( is_wp_error( $dologin_kl_public_key ) ) : ?>
+										<code id="dologin-kl-encryption-public-key" class="dologin-kl-encryption-public-key"><?php esc_html_e( 'Unavailable', 'dologin' ); ?></code>
+									<?php else : ?>
+										<code id="dologin-kl-encryption-public-key" class="dologin-kl-encryption-public-key"><?php echo esc_html( $dologin_kl_public_key ); ?></code>
+										<button type="button" class="button dologin-kl-copy-public-key"><?php esc_html_e( 'Copy Public Key', 'dologin' ); ?></button>
+									<?php endif; ?>
+									<span class="dologin-kl-copy-status" aria-live="polite"></span>
+								</div>
+								<p>
+									<?php
+									echo wp_kses_post(
+										sprintf(
+											/* translators: 1: opening code tag, 2: closing code tag. */
+											__( 'Paste this exact value into %1$sService key%2$s in the %1$sSSO Keys%2$s block in %1$sMyDeveloper%2$s. The matching private key remains protected on this WordPress site.', 'dologin' ),
+											'<code>',
+											'</code>'
+										)
+									);
+									?>
+								</p>
+							</div>
+							<div class="dologin-kl-key-row">
+								<strong class="dologin-kl-key-label"><?php esc_html_e( 'Site Key Fingerprint', 'dologin' ); ?></strong>
+								<div class="dologin-kl-key-value">
+									<?php if ( is_wp_error( $dologin_kl_fingerprint ) ) : ?>
+										<code id="dologin-kl-site-key-fingerprint"><?php esc_html_e( 'Unavailable', 'dologin' ); ?></code>
+										<span class="dologin-kl-site-key-status dologin-danger"><?php echo esc_html( $dologin_kl_fingerprint->get_error_message() ); ?></span>
+									<?php else : ?>
+										<code id="dologin-kl-site-key-fingerprint"><?php echo esc_html( $dologin_kl_fingerprint ); ?></code>
+										<span class="dologin-kl-site-key-status" aria-live="polite"></span>
+									<?php endif; ?>
+									<button type="button" class="button dologin-kl-reset-keys" <?php disabled( KLSso::force_enabled() ); ?>><?php esc_html_e( 'Reset Site Keys', 'dologin' ); ?></button>
+								</div>
+								<p>
+									<?php
+									echo wp_kses_post(
+										sprintf(
+											/* translators: 1: opening code tag, 2: closing code tag. */
+											__( 'The fixed signing and encryption keys keep this WordPress backend on one KeyLockr connection identity. Use %1$sReset Site Keys%2$s only to create a new identity, then update %1$sService key%2$s in the %1$sSSO Keys%2$s block in %1$sMyDeveloper%2$s before scanning again.', 'dologin' ),
+											'<code>',
+											'</code>'
+										)
+									);
+									?>
+								</p>
+								<?php if ( KLSso::force_enabled() ) : ?>
+									<p class="dologin-warn"><?php echo wp_kses_post( __( 'Disable <code>Force KeyLockr SSO</code> before resetting the site keys.', 'dologin' ) ); ?></p>
 								<?php endif; ?>
-							</li>
-							<li><?php esc_html_e( 'Paste the effective App Tag above and save these settings.', 'dologin' ); ?></li>
-							<li><?php esc_html_e( 'Link this WordPress account, enable SSO login, and test it before forcing QR-only login.', 'dologin' ); ?></li>
-						</ol>
+							</div>
+						</div>
+
+						<div class="dologin-kl-mydev-settings" role="group" aria-label="<?php esc_attr_e( 'Required MyDeveloper settings', 'dologin' ); ?>">
+							<strong><?php echo wp_kses_post( __( 'Configure only these <code>MyDeveloper</code> blocks. Turn every other option off.', 'dologin' ) ); ?></strong>
+							<dl>
+								<div class="dologin-kl-mydev-row">
+									<dt><?php esc_html_e( 'Service basics', 'dologin' ); ?></dt>
+									<dd>
+										<?php
+										echo wp_kses_post(
+											sprintf(
+												/* translators: 1: opening code tag, 2: closing code tag. */
+												__( 'Use any recognizable %1$sService Title%2$s. Leave %1$sServer IPs%2$s empty. Keep %1$sApp Data Storage%2$s on. Copy the effective %1$sApp Tag%2$s into the %1$sDoLogin App Tag%2$s field above.', 'dologin' ),
+												'<code>',
+												'</code>'
+											)
+										);
+										?>
+									</dd>
+								</div>
+								<div class="dologin-kl-mydev-row">
+									<dt><?php esc_html_e( 'SSO Keys', 'dologin' ); ?></dt>
+									<dd>
+										<?php
+										echo wp_kses_post(
+											sprintf(
+												/* translators: 1: opening code tag, 2: closing code tag. */
+												__( 'Paste the public key shown above into %1$sService key%2$s, select %1$sbackend%2$s under %1$sKey owner%2$s, and click %1$sUpdate%2$s.', 'dologin' ),
+												'<code>',
+												'</code>'
+											)
+										);
+										?>
+									</dd>
+								</div>
+							</dl>
+						</div>
+						<p class="dologin-kl-mydev-finish"><?php esc_html_e( 'Save DoLogin settings, link this WordPress account, and test SSO before forcing QR-only login.', 'dologin' ); ?></p>
 						<?php if ( $dologin_kl_requirements ) : ?>
 							<div class="dologin-warning-h3">
 								<?php echo esc_html( implode( ' ', $dologin_kl_requirements ) ); ?>
 							</div>
-						<?php endif; ?>
-					</div>
-					<div class="dologin-desc dologin-kl-site-keys">
-						<strong><?php esc_html_e( 'Site Key Fingerprint', 'dologin' ); ?>:</strong>
-						<?php if ( is_wp_error( $dologin_kl_fingerprint ) ) : ?>
-							<code id="dologin-kl-site-key-fingerprint"><?php esc_html_e( 'Unavailable', 'dologin' ); ?></code>
-							<span class="dologin-kl-site-key-status dologin-danger"><?php echo esc_html( $dologin_kl_fingerprint->get_error_message() ); ?></span>
-						<?php else : ?>
-							<code id="dologin-kl-site-key-fingerprint"><?php echo esc_html( $dologin_kl_fingerprint ); ?></code>
-							<span class="dologin-kl-site-key-status" aria-live="polite"></span>
-						<?php endif; ?>
-						<button type="button" class="button dologin-kl-reset-keys" <?php disabled( KLSso::force_enabled() ); ?>><?php esc_html_e( 'Reset Site Keys', 'dologin' ); ?></button>
-						<p><?php esc_html_e( 'The fixed signing and encryption keys keep this WordPress site on one KeyLockr connection identity. Reset only to create a new identity; linked accounts must then pass Verify Connection or a successful SSO login.', 'dologin' ); ?></p>
-						<?php if ( KLSso::force_enabled() ) : ?>
-							<p class="dologin-warn"><?php esc_html_e( 'Disable Force KeyLockr SSO before resetting the site keys.', 'dologin' ); ?></p>
 						<?php endif; ?>
 					</div>
 				</td>
@@ -146,12 +219,12 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 				<td>
 					<?php $dologin_gui->build_switch( 'kl_sso' ); ?>
 					<div class="dologin-desc">
-						<?php esc_html_e( 'Show KeyLockr QR login and verify both app_verify and the encrypted appdata hash.', 'dologin' ); ?>
+						<?php esc_html_e( 'Show KeyLockr QR login. The WordPress backend directly verifies and decrypts the signed KeyLockr completion, then verifies the encrypted app data hash.', 'dologin' ); ?>
 						<div class="dologin-kl-link">
 							<strong><?php esc_html_e( 'Link Current Account', 'dologin' ); ?></strong>
 							<?php $this->cls( 'KLSso' )->bind_form(); ?>
 							<?php if ( empty( KLSso::current_user_status()['bound'] ) ) : ?>
-								<p><?php esc_html_e( 'Unlock KeyLockr on your phone when prompted. The account is linked only after app data is written and read back successfully.', 'dologin' ); ?></p>
+								<p><?php esc_html_e( 'Scan with KeyLockr on your phone. The account is linked only after the authorization result directly supplies its app data filekey and the app data is written and read back successfully.', 'dologin' ); ?></p>
 							<?php endif; ?>
 						</div>
 					</div>
@@ -163,14 +236,14 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 				<td>
 					<?php $dologin_gui->build_switch( 'kl_sso_force' ); ?>
 					<div class="dologin-desc">
-						<?php esc_html_e( 'Hide the password form and allow only KeyLockr QR login. DoLogin enables this only after the current administrator has a verified binding for the saved App Tag and site keys. Once enabled, failures never restore other login methods; rename the plugin folder through FTP or the hosting file manager if external recovery is required.', 'dologin' ); ?>
+						<?php echo wp_kses_post( __( 'Hide the password form and allow only KeyLockr QR login. DoLogin enables this only after the current administrator has a verified binding for the saved <code>App Tag</code> and site keys. Once enabled, failures never restore other login methods; rename the plugin folder through FTP or the hosting file manager if external recovery is required.', 'dologin' ) ); ?>
 					</div>
 				</td>
 			</tr>
 		</tbody>
 	</table>
 
-	<h3 class="dologin-title-short"><?php esc_html_e( 'reCAPTCHA Settings', 'dologin' ); ?></h3>
+	<h3 class="dologin-title-short"><?php esc_html_e( 'Cloudflare Turnstile Settings', 'dologin' ); ?></h3>
 
 	<table class="wp-list-table striped dologin-table">
 		<tbody>
@@ -181,8 +254,8 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 					<div class="dologin-desc">
 						<?php
 						printf(
-							/* translators: %s: page name where the captcha is shown. */
-							esc_html__( 'This will enable reCAPTCHA on %s page.', 'dologin' ),
+							/* translators: %s: page name where Cloudflare Turnstile is shown. */
+							esc_html__( 'This will enable Cloudflare Turnstile on %s page.', 'dologin' ),
 							esc_html__( 'Login', 'dologin' )
 						);
 						?>
@@ -197,8 +270,8 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 					<div class="dologin-desc">
 						<?php
 						printf(
-							/* translators: %s: page name where the captcha is shown. */
-							esc_html__( 'This will enable reCAPTCHA on %s page.', 'dologin' ),
+							/* translators: %s: page name where Cloudflare Turnstile is shown. */
+							esc_html__( 'This will enable Cloudflare Turnstile on %s page.', 'dologin' ),
 							esc_html__( 'Register', 'dologin' )
 						);
 						?>
@@ -214,8 +287,8 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 					<div class="dologin-desc">
 						<?php
 						printf(
-							/* translators: %s: page name where the captcha is shown. */
-							esc_html__( 'This will enable reCAPTCHA on %s page.', 'dologin' ),
+							/* translators: %s: page name where Cloudflare Turnstile is shown. */
+							esc_html__( 'This will enable Cloudflare Turnstile on %s page.', 'dologin' ),
 							esc_html__( 'Lost Password', 'dologin' )
 						);
 						?>
@@ -250,10 +323,11 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 						<?php
 						echo wp_kses_post(
 							sprintf(
-								/* translators: %s: anchor tag attributes for the Cloudflare dashboard link. */
-								__( '<a %s>Click here</a> to generate keys from Cloudflare Turnstile.', 'dologin' ),
+								/* translators: 1: opening link tag, 2: closing link tag. */
+								__( 'Generate keys from %1$sCloudflare Turnstile%2$s.', 'dologin' ),
 								// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Link to the Cloudflare dashboard where the user obtains their Turnstile keys.
-								'href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank"'
+								'<a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener noreferrer">',
+								'</a>'
 							)
 						);
 						?>
@@ -309,7 +383,7 @@ $dologin_kl_fingerprint   = KLSso::site_key_fingerprint();
 							<div style="margin-right: 10px;">
 								<button type="button" class="button button-primary" id="dologin_get_ip" title="<?php echo esc_attr( sprintf( /* translators: %s: the doapi.us domain. */ __( 'This will send a request to %s to get your public Geolocation info.', 'dologin' ), 'https://doapi.us' ) ); ?>"><?php esc_html_e( 'Check My Geolocation Data', 'dologin' ); ?></button>
 							</div>
-							<code id="dologin_mygeolocation">-</code>
+							<code id="dologin_mygeolocation" aria-live="polite">-</code>
 						</div>
 					</div>
 				</td>

@@ -64,7 +64,7 @@ class Site extends Instance {
 	private function _easy_login() {
 		global $wpdb;
 		if ( ! $this->_sodium_ready() ) {
-			exit( 'dologin_sodium_unavailable' );
+			return $this->_admin_error( 'dologin_sodium_unavailable' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -75,14 +75,14 @@ class Site extends Instance {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; id is prepared.
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `$this->_tb` WHERE id = %d", $pid ) );
 		if ( ! $row || 1 !== (int) $row->active || 0 !== (int) $row->is_child || ! wp_http_validate_url( $row->url ) ) {
-			exit( 'Invalid record' );
+			return $this->_admin_error( 'dologin_site_token_invalid' );
 		}
 
 		$audience = $this->_easy_login_audience( $row->url );
 		try {
 			$jti = bin2hex( random_bytes( 16 ) );
 		} catch ( \Exception $ex ) {
-			exit( 'dologin_token_generation_failed' );
+			return $this->_admin_error( 'dologin_token_generation_failed' );
 		}
 		$claims = array(
 			'v'   => 2,
@@ -95,7 +95,7 @@ class Site extends Instance {
 		$claims_json = $this->_easy_login_claims_json( $claims );
 		$signature   = $claims_json ? $this->_pack_b64sign( $claims_json ) : false;
 		if ( ! $audience || ! $claims_json || ! $signature ) {
-			exit( 'dologin_token_generation_failed' );
+			return $this->_admin_error( 'dologin_token_generation_failed' );
 		}
 		$data = wp_json_encode(
 			array(
@@ -123,20 +123,20 @@ class Site extends Instance {
 
 		// This endpoint bypasses wp-login and must apply the same IP rules and failure limits.
 		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
-			exit( 'dologin_ip_denied' );
+			$this->_error_page( 'dologin_ip_denied', 403 );
 		}
 		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
-			exit( 'dologin_rate_limited' );
+			$this->_error_page( 'dologin_rate_limited', 429 );
 		}
 		if ( ! $this->_sodium_ready() ) {
-			exit( 'dologin_sodium_unavailable' );
+			$this->_error_page( 'dologin_sodium_unavailable', 503 );
 		}
 
 		// Magic-link endpoint authenticated by the signed token, not a nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$raw_token = isset( $_GET[ self::QS_NAME_EASY_LOGIN ] ) && is_string( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::QS_NAME_EASY_LOGIN ] ) ) : '';
 		if ( KLSso::force_enabled() ) {
-			exit( 'dologin_kl_sso_required' );
+			$this->_error_page( 'dologin_kl_sso_required', 403 );
 		}
 		$token = $this->_decode_easy_login_token( $raw_token );
 		if ( ! $token ) {
@@ -156,7 +156,7 @@ class Site extends Instance {
 			return $this->_failed_login( $username );
 		}
 		if ( $row->active != 1 || $row->is_child != 1 ) {
-			exit( 'dologin_invalid_root_record' );
+			$this->_error_page( 'dologin_invalid_root_record', 403 );
 		}
 
 		// Verify the complete assertion against the stored public key, never a request-only key.
@@ -179,7 +179,7 @@ class Site extends Instance {
 		// Only a token newer than every previously consumed token may proceed.
 		if ( (int) $row->last_used_at >= $ts ) {
 			defined( 'debug' ) && debug( 'dologin easy login already used' . $ts );
-			exit( 'dologin_link_used' );
+			$this->_error_page( 'dologin_link_used', 410 );
 		}
 
 		$user_info = get_userdata( $uid );
@@ -209,7 +209,7 @@ class Site extends Instance {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
 		$updated = $wpdb->query( $wpdb->prepare( $q, array( $ts, $row->id, $ts ) ) );
 		if ( 1 !== $updated ) {
-			exit( 'dologin_link_used' );
+			$this->_error_page( 'dologin_link_used', 410 );
 		}
 
 		// Login.
@@ -309,6 +309,22 @@ class Site extends Instance {
 		defined( 'debug' ) && debug( 'Failed to auth as user: ', $username );
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- firing the WordPress core hook.
 		do_action( 'wp_login_failed', $username );
+		$this->_error_page( 'dologin_link_invalid', 403 );
+	}
+
+	/**
+	 * Complete a rejected public token request with a localized page.
+	 */
+	private function _error_page( $tag, $status_code ) {
+		GUI::error_page( $tag, $status_code );
+		exit;
+	}
+
+	/**
+	 * Queue a localized error for a nonce- and capability-gated admin action.
+	 */
+	private function _admin_error( $tag ) {
+		GUI::error( Lang::msg( $tag ) );
 	}
 
 	/**
@@ -511,12 +527,12 @@ class Site extends Instance {
 		global $wpdb;
 		$this->cls( 'Data' )->tb_create( 'site' );
 		if ( ! $this->_sodium_ready() ) {
-			exit( 'Sodium cryptography support is required' );
+			return $this->_admin_error( 'dologin_sodium_unavailable' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( empty( $_POST['token'] ) ) {
-			exit( 'Missing token' );
+			return $this->_admin_error( 'dologin_site_token_missing' );
 		}
 
 		defined( 'debug' ) && debug( 'connection to child' );
@@ -528,7 +544,7 @@ class Site extends Instance {
 		$token_link = is_string( $_POST['token'] ) ? base64_decode( sanitize_text_field( wp_unslash( $_POST['token'] ) ), true ) : false;
 		// Block SSRF to internal/invalid hosts (defense in depth even though this path is manage_options-gated).
 		if ( ! wp_http_validate_url( $token_link ) ) {
-			exit( 'Invalid token URL' );
+			return $this->_admin_error( 'dologin_site_token_invalid' );
 		}
 		defined( 'debug' ) && debug( 'Validated child site connection token URL.' );
 		// Post to the child site w/ pk.
@@ -552,22 +568,24 @@ class Site extends Instance {
 
 		if ( is_wp_error( $resp ) ) {
 			$error_message = $resp->get_error_message();
-			GUI::error( esc_html( $error_message ) );
-			return;
+			defined( 'debug' ) && debug( 'Child site connection request failed:', $error_message );
+			return $this->_admin_error( 'dologin_site_connection_failed' );
 		}
 
-		if ( (int) wp_remote_retrieve_response_code( $resp ) < 200 || (int) wp_remote_retrieve_response_code( $resp ) >= 300 ) {
-			exit( 'Invalid child site response status' );
+		$response_code = (int) wp_remote_retrieve_response_code( $resp );
+		if ( $response_code < 200 || $response_code >= 300 ) {
+			defined( 'debug' ) && debug( 'Child site connection returned HTTP status:', $response_code );
+			return $this->_admin_error( 'dologin_site_connection_failed' );
 		}
 
 		$res = json_decode( wp_remote_retrieve_body( $resp ), true );
-		defined( 'debug' ) && debug( 'child connection res:', $res );
 		if ( empty( $res['status'] ) || 'ok' !== $res['status'] || empty( $res['child_title'] ) || ! is_scalar( $res['child_title'] ) || empty( $res['child_url'] ) || ! is_scalar( $res['child_url'] ) || ! isset( $res['child_user_id'], $res['child_user_name'] ) || ! is_scalar( $res['child_user_id'] ) || ! is_scalar( $res['child_user_name'] ) ) {
-			exit( esc_html( 'Invalid child site response: ' . $resp['body'] ) );
+			defined( 'debug' ) && debug( 'Child site connection response failed schema validation.' );
+			return $this->_admin_error( 'dologin_site_connection_failed' );
 		}
 		$child_url = esc_url_raw( $res['child_url'] );
 		if ( ! wp_http_validate_url( $child_url ) ) {
-			exit( 'Invalid child site URL' );
+			return $this->_admin_error( 'dologin_site_connection_failed' );
 		}
 
 		$q = "INSERT INTO `$this->_tb` SET title=%s, url=%s, pk=%s, is_child=0, user_id=%d, user_name=%s, dateline=%d, active=1";
@@ -600,13 +618,13 @@ class Site extends Instance {
 
 		// This public handshake endpoint must apply the same IP rules and failure limits.
 		if ( $this->cls( 'Auth' )->is_ip_denied() ) {
-			exit( 'dologin_ip_denied' );
+			$this->_error_page( 'dologin_ip_denied', 403 );
 		}
 		if ( $this->cls( 'Auth' )->is_rate_limited() ) {
-			exit( 'dologin_rate_limited' );
+			$this->_error_page( 'dologin_rate_limited', 429 );
 		}
 		if ( ! $this->_sodium_ready() ) {
-			exit( 'dologin_sodium_unavailable' );
+			$this->_error_page( 'dologin_sodium_unavailable', 503 );
 		}
 
 		defined( 'debug' ) && debug( 'Root site connection in' );
@@ -639,12 +657,12 @@ class Site extends Instance {
 		}
 		if ( $row->active != 1 || $row->is_child != 1 || $row->pk ) {
 			defined( 'debug' ) && debug( 'Invalid token record' );
-			exit( 'dologin_invalid_token_record' );
+			$this->_error_page( 'dologin_invalid_token_record', 403 );
 		}
 
 		if ( time() - $row->dateline > 3600 ) {
 			defined( 'debug' ) && debug( 'Token expired' );
-			exit( 'dologin_token_expired' );
+			$this->_error_page( 'dologin_token_expired', 410 );
 		}
 
 		// Verify root site info.
@@ -659,23 +677,23 @@ class Site extends Instance {
 		$root_scheme = wp_parse_url( $root_url, PHP_URL_SCHEME );
 		if ( ! $root_url || ! in_array( $root_scheme, array( 'http', 'https' ), true ) || ! $root_title || ! $root_pk || ! $sign ) {
 			defined( 'debug' ) && debug( 'Invalid dologin connect root data' );
-			exit( 'Invalid dologin connect root data' );
+			$this->_error_page( 'dologin_site_token_invalid', 403 );
 		}
 		$signed_ts = $this->_unpack_b64sign( $sign, $root_pk );
 		if ( ! is_string( $signed_ts ) || ! preg_match( '/^[0-9]+$/D', $signed_ts ) || (int) $signed_ts < time() - 3600 || (int) $signed_ts > time() + 300 ) { // Root and child site clocks cannot be materially out of sync.
 			defined( 'debug' ) && debug( 'dologin connect root clock should not diff w/ child more than 1 hour' );
-			exit( 'dologin: Failed to validate timestamp. Root site clock should not diff w/ child more than 1 hour' );
+			$this->_error_page( 'dologin_site_clock_mismatch', 403 );
 		}
 		if ( $root_url == site_url() ) {
 			defined( 'debug' ) && debug( 'dologin connect root site url same as child' );
-			exit( 'dologin connect root site url same as child' );
+			$this->_error_page( 'dologin_site_same_url', 409 );
 		}
 		// Only one record allowed per root site pk per user_id.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
 		$exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `$this->_tb` WHERE pk = %s AND user_id = %d", $root_pk, $row->user_id ) );
 		if ( $exists > 0 ) {
 			defined( 'debug' ) && debug( 'dologin connect root site pk already exists for user' );
-			exit( 'dologin connect root site pk already exists for user' );
+			$this->_error_page( 'dologin_site_already_connected', 409 );
 		}
 
 		// Can login, update record first.
@@ -683,7 +701,7 @@ class Site extends Instance {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery --$this->_tb is a hardcoded internal table name; values are prepared.
 		$updated = $wpdb->query( $wpdb->prepare( $q, array( $root_title, $root_url, $root_pk, $pid ) ) );
 		if ( 1 !== $updated ) {
-			exit( 'dologin_token_used' );
+			$this->_error_page( 'dologin_token_used', 410 );
 		}
 
 		nocache_headers();

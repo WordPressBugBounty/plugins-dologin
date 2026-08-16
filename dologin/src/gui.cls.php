@@ -24,12 +24,14 @@ class GUI extends Instance {
 	public function init() {
 		add_action( 'login_message', array( $this, 'login_message' ) );
 		add_filter( 'login_body_class', array( $this, 'login_body_class' ), 10, 2 );
+		add_filter( 'body_class', array( $this, 'frontend_body_class' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'frontend_enqueue_styles' ) );
 		add_filter( 'lost_password_html_link', array( $this, 'lost_password_html_link' ), PHP_INT_MAX );
 		add_filter( 'login_link_separator', array( $this, 'login_link_separator' ), PHP_INT_MAX );
 
 		add_action( 'login_enqueue_scripts', array( $this, 'login_enqueue_scripts' ) );
 
-		// Register injection for phone number
+		// Inject Cloudflare Turnstile into the registration form.
 		add_action( 'register_form', array( $this, 'register_form' ) );
 
 		add_action( 'lostpassword_form', array( $this, 'lostpassword_form' ) );
@@ -52,6 +54,30 @@ class GUI extends Instance {
 		}
 
 		return $classes;
+	}
+
+	/**
+	 * Mark frontend forced-SSO screens for non-JavaScript password-form hiding.
+	 *
+	 * @since 4.9.5
+	 */
+	public function frontend_body_class( $classes ) {
+		if ( KLSso::force_enabled() ) {
+			$classes[] = 'dologin-kl-force-login';
+		}
+
+		return $classes;
+	}
+
+	/**
+	 * Load forced-login styles in the frontend head before WooCommerce renders.
+	 *
+	 * @since 5.0.1
+	 */
+	public function frontend_enqueue_styles() {
+		if ( KLSso::force_enabled() ) {
+			wp_enqueue_style( 'dologin-kl-force', DOLOGIN_PLUGIN_URL . 'assets/force-login.css', array(), Core::VER, 'all' );
+		}
 	}
 
 	/**
@@ -124,6 +150,7 @@ class GUI extends Instance {
 			return;
 		}
 		$this->enqueue_style();
+		wp_enqueue_style( 'dologin-components', DOLOGIN_PLUGIN_URL . 'assets/login-components.css', array( 'dologin' ), Core::VER, 'all' );
 
 		if ( $is_dologin_page || $is_users_page ) {
 			wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
@@ -134,9 +161,13 @@ class GUI extends Instance {
 			$localize_data['nonce']             = wp_create_nonce( 'wp_rest' );
 			$localize_data['ip_lookup_progress'] = __( 'Looking up this IP address...', 'dologin' );
 			$localize_data['ip_lookup_failed']   = __( 'Failed to look up this IP address.', 'dologin' );
-			$localize_data['reset_keys_confirm'] = __( 'Reset the KeyLockr site keys? Future scans will create a new KeyLockr connection. Linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed.', 'dologin' );
+			$localize_data['clear_log_confirm']   = __( 'Clear login-attempt records older than one month? This action cannot be undone.', 'dologin' );
+			$localize_data['reset_keys_confirm'] = __( 'Reset the KeyLockr site keys? As the service owner, you must update Service key in the SSO Keys block in MyDeveloper before scanning again. Future scans will create a new KeyLockr connection, and linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed.', 'dologin' );
 			$localize_data['resetting_keys']     = __( 'Resetting KeyLockr site keys...', 'dologin' );
 			$localize_data['reset_keys_failed']  = __( 'Failed to reset KeyLockr site keys.', 'dologin' );
+			$localize_data['copy_public_key']     = __( 'Copy Public Key', 'dologin' );
+			$localize_data['copied']             = __( 'Copied!', 'dologin' );
+			$localize_data['copy_failed']         = __( 'Copy failed. Select and copy manually.', 'dologin' );
 			wp_localize_script( 'dologin_admin', 'dologin_admin', $localize_data );
 
 			wp_enqueue_script( 'dologin_admin' );
@@ -387,6 +418,19 @@ class GUI extends Instance {
 	 */
 	public static function error( $msg, $echo = false ) {
 		self::_add_notice( self::NOTICE_RED, $msg, $echo );
+	}
+
+	/**
+	 * Render a standalone localized error page for a public token endpoint.
+	 *
+	 * The caller remains responsible for terminating the request after rendering.
+	 */
+	public static function error_page( $tag, $status_code = 400 ) {
+		status_header( (int) $status_code );
+		nocache_headers();
+
+		$message = Lang::text( $tag );
+		require DOLOGIN_DIR . 'tpl/error.tpl.php';
 	}
 
 	/**
