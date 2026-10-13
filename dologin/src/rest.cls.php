@@ -29,6 +29,19 @@ class REST extends Instance {
 	 * @access public
 	 */
 	public function rest_api_init() {
+		foreach ( array( 'challenge', 'verify', 'demo_challenge', 'demo_verify' ) as $action ) {
+			$is_demo = 0 === strpos( $action, 'demo_' );
+			register_rest_route( 'dologin/v1', '/captcha/' . $action, array(
+				'methods' => 'POST',
+				'callback' => array( $this->cls( 'Captcha_Local' ), $action ),
+				'permission_callback' => $is_demo ? array( $this, 'captcha_preview_allowed' ) : '__return_true',
+			) );
+		}
+		register_rest_route( 'dologin/v1', '/captcha/demo_turnstile', array(
+			'methods' => 'POST',
+			'callback' => array( $this->cls( 'Captcha' ), 'demo_turnstile' ),
+			'permission_callback' => array( $this, 'captcha_preview_allowed' ),
+		) );
 		register_rest_route(
 			'dologin/v1',
 			'/myip',
@@ -92,6 +105,10 @@ class REST extends Instance {
 				},
 			)
 		);
+	}
+
+	public function captcha_preview_allowed() {
+		return current_user_can( apply_filters( 'dologin_admin_menu_access', 'manage_options' ) );
 	}
 
 	/**

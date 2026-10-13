@@ -24,6 +24,7 @@ class Conf extends Instance {
 		'kl_sso_force'      => false,
 		'kl_sso_svc_id'     => '',
 		'cf'                => false,
+		'captcha_method'    => 'turnstile',
 		'cf_pub_key'        => '',
 		'cf_priv_key'       => '',
 		'recapt_register'   => false,

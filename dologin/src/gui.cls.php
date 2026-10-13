@@ -106,12 +106,16 @@ class GUI extends Instance {
 	 */
 	public function login_enqueue_scripts() {
 		$this->enqueue_style();
+		if ( in_array( Captcha::method(), array( 'pow', 'sequence', 'puzzle' ), true ) ) {
+			Captcha_UI::enqueue();
+		}
 
 		if ( Conf::val( '2fa' ) && ! KLSso::force_enabled() ) {
 			wp_register_script( 'dologin', DOLOGIN_PLUGIN_URL . 'assets/login.js', array( 'jquery' ), Core::VER, false );
 
 			$localize_data              = array();
 			$localize_data['login_url'] = get_rest_url( null, 'dologin/v1/2fa' );
+			$localize_data['network_error'] = __( 'Login verification failed. Please try again.', 'dologin' );
 			wp_localize_script( 'dologin', 'dologin', $localize_data );
 
 			wp_enqueue_script( 'dologin' );
@@ -151,6 +155,9 @@ class GUI extends Instance {
 		}
 		$this->enqueue_style();
 		wp_enqueue_style( 'dologin-components', DOLOGIN_PLUGIN_URL . 'assets/login-components.css', array( 'dologin' ), Core::VER, 'all' );
+		if ( $is_dologin_page ) {
+			Captcha_UI::enqueue( true );
+		}
 
 		if ( $is_dologin_page || $is_users_page ) {
 			wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
@@ -231,7 +238,7 @@ class GUI extends Instance {
 
 		$this->cls( 'KLSso' )->login_form();
 
-		if ( Conf::val( 'cf' ) && ! KLSso::force_enabled() ) {
+		if ( Captcha::enabled() ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -243,8 +250,8 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function register_form() {
-		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
-			$this->cls( 'Captcha' )->show();
+		if ( Captcha::enabled( 'register' ) ) {
+			$this->cls( 'Captcha' )->show( 'register' );
 		}
 	}
 
@@ -255,8 +262,8 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function lostpassword_form() {
-		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_forget' ) ) {
-			$this->cls( 'Captcha' )->show();
+		if ( Captcha::enabled( 'reset' ) ) {
+			$this->cls( 'Captcha' )->show( 'reset' );
 		}
 	}
 

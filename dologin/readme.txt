@@ -4,7 +4,7 @@ Tags: Login security, 2FA login, Cloudflare Turnstile, limit login attempts, pas
 Requires at least: 4.4
 Requires PHP: 5.6
 Tested up to: 7.1
-Stable tag: 5.0.10
+Stable tag: 5.1.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -21,6 +21,7 @@ Limit the number of login attempts through both the login and the auth cookies.
 * KeyLockr SSO scan login with encrypted appdata hash verification and session-bound encryption.
 
 * Cloudflare Turnstile (better than Google reCAPTCHA).
+* Local proof-of-work verification with no third-party service, plus ordered-click and slider-puzzle options backed by PoW. Interactive settings previews show actual server verification results.
 
 * GeoLocation (Continent/Country/City) or IP range to limit login attempts.
 
@@ -136,6 +137,14 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 9. WooCommerce login protection
 
 == Changelog ==
+
+= 5.1.3 - Oct 13 2026 =
+* 🍀 Added local proof-of-work, ordered clicks with PoW, and slider puzzles with PoW alongside Cloudflare Turnstile.
+* 🍀 Unified bot-protection toggles and automatic previews with visible PoW statistics, free image clicks, a large puzzle handle and a refresh icon. Loading and server results overlay the current challenge without adding a status row.
+* 🔐 Bound one-time tickets to their form and exact client, grouped IPv6 quotas by /64, capped each client at five live records, and refused challenges for blocked IPs.
+* 🔐 Removed image metadata shortcuts with GD-generated PNGs and added random colors and pixel texture. Image recognition remains possible; image modes require PHP GD and never silently downgrade.
+* 🐞 Prevented unsafe HTTP configuration, added keyboard Enter submission for sliders and Backspace undo with click-count announcements, and aligned 2FA preflight credentials with final login.
+* 🐞 Limited shared 2fa cleanup to DoLogin-sealed values and preserved uninstall retry on read failure. Unknown unsealed values survive; third-party values sealed by the old 4.7.4 migration cannot be distinguished and are still removed.
 
 = 5.0.10 - Aug 15 2026 =
 * 🍀 Added verified same-device KeyLockr login, simplified MyDeveloper guidance, and reduced login-page assets.

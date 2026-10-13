@@ -41,6 +41,21 @@ class Lang extends Instance {
 	 */
 	public static function text( $tag, $num = null ) {
 		switch ( $tag ) {
+			case 'local_captcha_missing':
+				$msg = __( 'Please complete verification before submitting.', 'dologin' );
+				break;
+			case 'local_captcha_invalid':
+				$msg = __( 'Verification failed or expired. Start a new challenge and try again.', 'dologin' );
+				break;
+			case 'local_captcha_busy':
+				$msg = __( 'Too many verification requests. Please wait a minute and try again.', 'dologin' );
+				break;
+			case 'local_captcha_unavailable':
+				$msg = __( 'Verification is temporarily unavailable. Please try again.', 'dologin' );
+				break;
+			case 'local_captcha_image_unavailable':
+				$msg = __( 'Image verification requires PHP GD with PNG support. Contact the administrator or choose Local PoW in settings.', 'dologin' );
+				break;
 			case 'not_2fa_set_user':
 				$msg = __( 'No 2FA set under this user profile.', 'dologin' );
 				break;

@@ -215,6 +215,14 @@ class Util extends Instance {
 	 * @access public
 	 */
 	public static function uninstall() {
+		try {
+			// Read/delete the legacy shared key before dropping tables or settings.
+			self::delete_twofa_data();
+		} catch ( \RuntimeException $error ) {
+			// Core removes this registration before invoking us; restore it for a retry.
+			register_uninstall_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\\Util::uninstall' );
+			throw $error;
+		}
 		self::version_check( 'uninstall' );
 
 		if ( is_multisite() ) {
@@ -254,18 +262,41 @@ class Util extends Instance {
 	private static function delete_user_data() {
 		global $wpdb;
 
-		$q = "SELECT DISTINCT meta_key FROM `$wpdb->usermeta` WHERE meta_key = %s OR meta_key LIKE %s";
+		$q = "SELECT DISTINCT meta_key FROM `$wpdb->usermeta` WHERE meta_key LIKE %s";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery -- $wpdb->usermeta is the internal usermeta table; keys are prepared and delete_metadata() clears caches.
 		$meta_keys = $wpdb->get_col(
 			$wpdb->prepare(
 				$q,
-				'2fa',
 				$wpdb->esc_like( 'dologin_kl_' ) . '%'
 			)
 		);
 		foreach ( (array) $meta_keys as $meta_key ) {
 			delete_metadata( 'user', 0, (string) $meta_key, '', true );
 		}
+	}
+
+	/**
+	 * The legacy generic key may belong to another plugin. Only our sealed prefix
+	 * identifies our storage format; the 4.7.4 migration also sealed foreign values.
+	 * Leave unsealed/unknown values even if they resemble a seed.
+	 * Compare the original value during deletion so a concurrent replacement survives.
+	 */
+	private static function delete_twofa_data() {
+		global $wpdb;
+		$last_id = 0;
+		do {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Prepared cursor/key; WordPress deletes exact values and invalidates user caches.
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT umeta_id, user_id, meta_value FROM `$wpdb->usermeta` WHERE umeta_id > %d AND meta_key = %s ORDER BY umeta_id ASC LIMIT 500", $last_id, '2fa' ) );
+			if ( ! is_array( $rows ) || '' !== $wpdb->last_error ) {
+				throw new \RuntimeException( 'DoLogin could not read user metadata during uninstall.' );
+			}
+			foreach ( $rows as $row ) {
+				$last_id = (int) $row->umeta_id;
+				if ( Secret::is_sealed( $row->meta_value ) ) {
+					delete_user_meta( (int) $row->user_id, '2fa', $row->meta_value );
+				}
+			}
+		} while ( 500 === count( $rows ) );
 	}
 
 	/**

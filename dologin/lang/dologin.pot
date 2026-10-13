@@ -2,21 +2,21 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: DoLogin Security 5.0.10\n"
+"Project-Id-Version: DoLogin Security 5.1.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/dologin\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-16T02:22:51+00:00\n"
+"POT-Creation-Date: 2026-10-13T17:09:46+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: dologin\n"
 
 #. Plugin Name of the plugin
 #: dologin.php
-#: src/lang.cls.php:199
+#: src/lang.cls.php:214
 #: tpl/entry.tpl.php:21
 #: tpl/error.tpl.php:23
 #: tpl/error.tpl.php:27
@@ -58,24 +58,36 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/admin.cls.php:159
+#: src/admin.cls.php:161
+msgid "Select a valid verification method. The previous method was retained."
+msgstr ""
+
+#: src/admin.cls.php:165
+msgid "Local verification requires HTTPS for both settings and login, except on localhost. The previous verification settings were retained."
+msgstr ""
+
+#: src/admin.cls.php:171
+msgid "Turnstile needs both keys. The previous verification settings were retained."
+msgstr ""
+
+#: src/admin.cls.php:179
 msgid "KeyLockr App Tag is required."
 msgstr ""
 
-#: src/admin.cls.php:163
+#: src/admin.cls.php:183
 msgid "KeyLockr SSO was not enabled."
 msgstr ""
 
-#: src/admin.cls.php:168
+#: src/admin.cls.php:188
 msgid "Force KeyLockr SSO was not enabled. Link and verify the current administrator with the saved App Tag and site keys first."
 msgstr ""
 
-#: src/admin.cls.php:178
+#: src/admin.cls.php:198
 msgid "Options saved successfully!"
 msgstr ""
 
-#: src/admin.cls.php:231
-#: src/admin.cls.php:249
+#: src/admin.cls.php:251
+#: src/admin.cls.php:269
 msgid "Deleted user"
 msgstr ""
 
@@ -92,6 +104,165 @@ msgstr ""
 #. translators: %d: number of cleared records.
 #: src/auth.cls.php:522
 msgid "Cleared %d record(s) successfully!"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Star"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Heart"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Leaf"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Moon"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Lightning"
+msgstr ""
+
+#: src/captcha-image.cls.php:124
+msgid "Fish"
+msgstr ""
+
+#: src/captcha-local.cls.php:155
+msgid "Passed: verified by this server."
+msgstr ""
+
+#: src/captcha-ui.cls.php:14
+msgid "Off"
+msgstr ""
+
+#: src/captcha-ui.cls.php:15
+msgid "Local PoW"
+msgstr ""
+
+#: src/captcha-ui.cls.php:16
+msgid "Ordered clicks + PoW"
+msgstr ""
+
+#: src/captcha-ui.cls.php:17
+msgid "Slider puzzle + PoW"
+msgstr ""
+
+#: src/captcha-ui.cls.php:18
+msgid "Cloudflare Turnstile"
+msgstr ""
+
+#: src/captcha-ui.cls.php:32
+msgid "Computing proof on this device…"
+msgstr ""
+
+#: src/captcha-ui.cls.php:33
+msgid "Loading challenge…"
+msgstr ""
+
+#: src/captcha-ui.cls.php:34
+msgid "Checking on the server…"
+msgstr ""
+
+#: src/captcha-ui.cls.php:35
+msgid "Verification passed."
+msgstr ""
+
+#: src/captcha-ui.cls.php:36
+msgid "Could not complete verification. Start a new challenge and try again."
+msgstr ""
+
+#: src/captcha-ui.cls.php:37
+msgid "Local verification needs HTTPS, JavaScript, Web Workers and Web Crypto in a modern browser."
+msgstr ""
+
+#: src/captcha-ui.cls.php:38
+msgid "Verification expired. Please try again."
+msgstr ""
+
+#: src/captcha-ui.cls.php:39
+msgid "Complete verification before submitting."
+msgstr ""
+
+#: src/captcha-ui.cls.php:40
+msgid "Select these patterns in order:"
+msgstr ""
+
+#: src/captcha-ui.cls.php:41
+msgid "Click the image, or use arrow keys to move and Enter or Space to mark a point. Backspace undoes the last point before submission. Green rings record clicks, not correct answers."
+msgstr ""
+
+#. translators: 1: recorded points, 2: required points.
+#: src/captcha-ui.cls.php:43
+msgid "Recorded %1$d of %2$d points."
+msgstr ""
+
+#: src/captcha-ui.cls.php:44
+msgid "Find the three requested patterns in this image."
+msgstr ""
+
+#: src/captcha-ui.cls.php:45
+msgid "Drag to fill the gap and release to verify. With a keyboard, adjust with arrow keys, then press Enter."
+msgstr ""
+
+#: src/captcha-ui.cls.php:46
+msgid "Puzzle piece position"
+msgstr ""
+
+#: src/captcha-ui.cls.php:47
+msgid "SHA-256 · 16 zero bits · ~65,536 hashes on average"
+msgstr ""
+
+#. translators: 1: hashes computed, 2: elapsed milliseconds, 3: hashes per second.
+#: src/captcha-ui.cls.php:49
+msgid "%1$s hashes · %2$s ms · %3$s hashes/s"
+msgstr ""
+
+#: src/captcha-ui.cls.php:50
+msgid "Starting local computation…"
+msgstr ""
+
+#: src/captcha-ui.cls.php:51
+msgid "Landscape with a missing puzzle piece"
+msgstr ""
+
+#: src/captcha-ui.cls.php:52
+msgid "Verification is off. Choose a method to try it."
+msgstr ""
+
+#: src/captcha-ui.cls.php:53
+msgid "Save both Turnstile keys first. The preview uses the saved keys."
+msgstr ""
+
+#: src/captcha-ui.cls.php:54
+msgid "Complete the Turnstile challenge below."
+msgstr ""
+
+#. translators: %s: elapsed milliseconds measured by the browser.
+#: src/captcha-ui.cls.php:56
+msgid "Elapsed: %s ms"
+msgstr ""
+
+#: src/captcha-ui.cls.php:66
+msgid "Refresh challenge"
+msgstr ""
+
+#: src/captcha-ui.cls.php:67
+msgid "Ready to verify."
+msgstr ""
+
+#: src/captcha-ui.cls.php:72
+msgid "JavaScript is required for verification."
+msgstr ""
+
+#: src/captcha.cls.php:142
+msgid "You cannot preview verification settings."
+msgstr ""
+
+#: src/captcha.cls.php:146
+msgid "Passed: Cloudflare confirmed this response on the server."
 msgstr ""
 
 #: src/cli.cls.php:32
@@ -133,74 +304,78 @@ msgstr ""
 msgid "Failed to write to %s."
 msgstr ""
 
-#: src/gui.cls.php:162
+#: src/gui.cls.php:118
+msgid "Login verification failed. Please try again."
+msgstr ""
+
+#: src/gui.cls.php:169
 msgid "Looking up this IP address..."
 msgstr ""
 
-#: src/gui.cls.php:163
+#: src/gui.cls.php:170
 msgid "Failed to look up this IP address."
 msgstr ""
 
-#: src/gui.cls.php:164
+#: src/gui.cls.php:171
 msgid "Clear login-attempt records older than one month? This action cannot be undone."
 msgstr ""
 
-#: src/gui.cls.php:165
+#: src/gui.cls.php:172
 msgid "Reset the KeyLockr site keys? As the service owner, you must update Service key in the SSO Keys block in MyDeveloper before scanning again. Future scans will create a new KeyLockr connection, and linked accounts must then pass Verify Connection or a successful SSO login. Existing KeyLockr connection records are not removed."
 msgstr ""
 
-#: src/gui.cls.php:166
+#: src/gui.cls.php:173
 msgid "Resetting KeyLockr site keys..."
 msgstr ""
 
-#: src/gui.cls.php:167
+#: src/gui.cls.php:174
 #: src/klsso-keys.cls.php:57
 msgid "Failed to reset KeyLockr site keys."
 msgstr ""
 
-#: src/gui.cls.php:168
+#: src/gui.cls.php:175
 #: tpl/setting.tpl.php:125
 msgid "Copy Public Key"
 msgstr ""
 
-#: src/gui.cls.php:169
+#: src/gui.cls.php:176
 msgid "Copied!"
 msgstr ""
 
-#: src/gui.cls.php:170
+#: src/gui.cls.php:177
 msgid "Copy failed. Select and copy manually."
 msgstr ""
 
-#: src/gui.cls.php:200
+#: src/gui.cls.php:207
 msgid "Connecting to KeyLockr..."
 msgstr ""
 
-#: src/gui.cls.php:201
+#: src/gui.cls.php:208
 msgid "Get New QR"
 msgstr ""
 
-#: src/gui.cls.php:202
+#: src/gui.cls.php:209
 msgid "KeyLockr SSO failed."
 msgstr ""
 
-#: src/gui.cls.php:203
+#: src/gui.cls.php:210
 msgid "KeyLockr SSO verified."
 msgstr ""
 
-#: src/gui.cls.php:204
+#: src/gui.cls.php:211
 msgid "Unlink KeyLockr SSO from this WordPress account?"
 msgstr ""
 
-#: src/gui.cls.php:226
+#: src/gui.cls.php:233
 msgid "Dynamic Code"
 msgstr ""
 
-#: src/gui.cls.php:348
+#: src/gui.cls.php:355
 msgid "OFF"
 msgstr ""
 
-#: src/gui.cls.php:349
-#: src/lang.cls.php:69
+#: src/gui.cls.php:356
+#: src/lang.cls.php:84
 msgid "ON"
 msgstr ""
 
@@ -740,134 +915,154 @@ msgid "%s attempt(s) remaining."
 msgstr ""
 
 #: src/lang.cls.php:45
-msgid "No 2FA set under this user profile."
+msgid "Please complete verification before submitting."
 msgstr ""
 
-#: src/lang.cls.php:49
-msgid "Empty username/password."
+#: src/lang.cls.php:48
+msgid "Verification failed or expired. Start a new challenge and try again."
 msgstr ""
 
-#: src/lang.cls.php:53
-msgid "Invalid username/password."
+#: src/lang.cls.php:51
+msgid "Too many verification requests. Please wait a minute and try again."
+msgstr ""
+
+#: src/lang.cls.php:54
+msgid "Verification is temporarily unavailable. Please try again."
 msgstr ""
 
 #: src/lang.cls.php:57
+msgid "Image verification requires PHP GD with PNG support. Contact the administrator or choose Local PoW in settings."
+msgstr ""
+
+#: src/lang.cls.php:60
+msgid "No 2FA set under this user profile."
+msgstr ""
+
+#: src/lang.cls.php:64
+msgid "Empty username/password."
+msgstr ""
+
+#: src/lang.cls.php:68
+msgid "Invalid username/password."
+msgstr ""
+
+#: src/lang.cls.php:72
 msgid "Your IP is not in the whitelist."
 msgstr ""
 
-#: src/lang.cls.php:61
+#: src/lang.cls.php:76
 msgid "Your IP is in the blacklist."
 msgstr ""
 
-#: src/lang.cls.php:65
+#: src/lang.cls.php:80
 msgid "Too many failed login attempts. Please try later."
 msgstr ""
 
-#: src/lang.cls.php:77
+#: src/lang.cls.php:92
 msgid "Dynamic code is required."
 msgstr ""
 
-#: src/lang.cls.php:81
+#: src/lang.cls.php:96
 msgid "Dynamic code is not correct."
 msgstr ""
 
-#: src/lang.cls.php:85
+#: src/lang.cls.php:100
 msgid "Please complete the Cloudflare Turnstile verification."
 msgstr ""
 
-#: src/lang.cls.php:90
+#: src/lang.cls.php:105
 msgid "The response parameter is missing."
 msgstr ""
 
-#: src/lang.cls.php:94
+#: src/lang.cls.php:109
 msgid "The response parameter is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:98
+#: src/lang.cls.php:113
 msgid "The secret parameter is missing."
 msgstr ""
 
-#: src/lang.cls.php:102
+#: src/lang.cls.php:117
 msgid "The secret parameter is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:106
+#: src/lang.cls.php:121
 msgid "The request is invalid or malformed."
 msgstr ""
 
-#: src/lang.cls.php:110
+#: src/lang.cls.php:125
 msgid "The response is no longer valid: either is too old or has been used previously."
 msgstr ""
 
-#: src/lang.cls.php:117
+#: src/lang.cls.php:132
 msgid "Cloudflare Turnstile verification is temporarily unavailable. Please try again."
 msgstr ""
 
-#: src/lang.cls.php:121
+#: src/lang.cls.php:136
 msgid "KeyLockr SSO is required to log in to this site."
 msgstr ""
 
-#: src/lang.cls.php:125
+#: src/lang.cls.php:140
 msgid "Login is not allowed from your IP address."
 msgstr ""
 
-#: src/lang.cls.php:129
+#: src/lang.cls.php:144
 msgid "Too many failed login attempts. Please try again later."
 msgstr ""
 
-#: src/lang.cls.php:134
+#: src/lang.cls.php:149
 msgid "This login link is invalid."
 msgstr ""
 
-#: src/lang.cls.php:138
+#: src/lang.cls.php:153
 msgid "This login link has already been used or disabled."
 msgstr ""
 
-#: src/lang.cls.php:142
+#: src/lang.cls.php:157
 msgid "This login link has expired."
 msgstr ""
 
-#: src/lang.cls.php:146
+#: src/lang.cls.php:161
 msgid "Secure login is temporarily unavailable. Please contact the site administrator."
 msgstr ""
 
-#: src/lang.cls.php:150
+#: src/lang.cls.php:165
 msgid "Unable to create a secure login token. Please try again."
 msgstr ""
 
-#: src/lang.cls.php:155
+#: src/lang.cls.php:170
 msgid "This site connection token is invalid."
 msgstr ""
 
-#: src/lang.cls.php:159
+#: src/lang.cls.php:174
 msgid "Enter a child-site connection token."
 msgstr ""
 
-#: src/lang.cls.php:163
+#: src/lang.cls.php:178
 msgid "Unable to connect to the child site. Check the connection token and try again."
 msgstr ""
 
-#: src/lang.cls.php:167
+#: src/lang.cls.php:182
 msgid "The root and child site clocks are too far apart to complete the connection."
 msgstr ""
 
-#: src/lang.cls.php:171
+#: src/lang.cls.php:186
 msgid "A site cannot connect to itself."
 msgstr ""
 
-#: src/lang.cls.php:175
+#: src/lang.cls.php:190
 msgid "This root site is already connected for the selected user."
 msgstr ""
 
-#: src/lang.cls.php:179
+#: src/lang.cls.php:194
 msgid "This site connection token has expired."
 msgstr ""
 
-#: src/lang.cls.php:183
+#: src/lang.cls.php:198
 msgid "This site connection token has already been used."
 msgstr ""
 
-#: src/lang.cls.php:187
+#: src/lang.cls.php:202
 msgid "Unable to complete this request. Please try again."
 msgstr ""
 
@@ -967,11 +1162,11 @@ msgid "You need to setup your 2FA before enabling this setting to avoid yourself
 msgstr ""
 
 #: src/twofa.cls.php:212
-#: src/twofa.cls.php:380
+#: src/twofa.cls.php:381
 msgid "The stored 2FA secret cannot be decrypted. Restore the WordPress authentication salts or reset this user's 2FA secret."
 msgstr ""
 
-#: src/twofa.cls.php:383
+#: src/twofa.cls.php:384
 msgid "Please provide the code from your 2FA app"
 msgstr ""
 
@@ -994,6 +1189,87 @@ msgstr ""
 
 #: src/util.cls.php:190
 msgid "&raquo;"
+msgstr ""
+
+#: tpl/captcha.tpl.php:7
+msgid "Bot Protection"
+msgstr ""
+
+#: tpl/captcha.tpl.php:10
+#: tpl/captcha.tpl.php:13
+msgid "Verification method"
+msgstr ""
+
+#: tpl/captcha.tpl.php:23
+msgid "No bot-verification challenge is added. Login attempt limits and account authentication remain separate settings."
+msgstr ""
+
+#: tpl/captcha.tpl.php:26
+msgid "No service account, API keys or third-party requests."
+msgstr ""
+
+#: tpl/captcha.tpl.php:27
+msgid "The server issues a random challenge valid for five minutes. A Web Worker on the visitor’s device searches for a number whose SHA-256 hash, combined with that challenge, begins with 16 zero bits. This takes about 65,536 hashes on average; your server verifies the proof with one hash. Computation runs away from the page’s main thread and stops when the challenge is cancelled or its time limit is reached."
+msgstr ""
+
+#: tpl/captcha.tpl.php:28
+msgid "The server binds the challenge to the request’s IP address and browser user agent, checks the answer, and issues a short-lived, single-use form ticket. A 2FA login can continue once with the same credentials. Preview challenges cannot authorize a login. Temporary records are bounded and expire after five minutes."
+msgstr ""
+
+#: tpl/captcha.tpl.php:29
+msgid "PoW raises the cost of automated requests; it does not prove that a visitor is human and is not cryptocurrency mining. Faster hardware can still automate it. Keep login attempt limits enabled. It needs HTTPS and a modern JavaScript browser and may take longer or use more battery on slower devices. It does not replace passwords or 2FA."
+msgstr ""
+
+#: tpl/captcha.tpl.php:32
+msgid "Click the three sample shapes in order anywhere on the image. Each click adds a green ring to record its position, including incorrect clicks; no answer is checked until the third click submits all three coordinates with PoW. Shapes have random positions, rotations and colors over a colored background. Match shapes, not colors. Keyboard users can move a free cursor with arrow keys (Shift for larger steps) and mark with Enter or Space."
+msgstr ""
+
+#: tpl/captcha.tpl.php:33
+msgid "Only PNG pixels are sent to the browser; target positions and acceptance areas stay on the server. Color and distortion add visual variation but cannot guarantee resistance to image recognition or bots. Both image modes require PHP GD with PNG support. Choose Local PoW if GD or visual interaction is unavailable; no weaker fallback is applied automatically."
+msgstr ""
+
+#: tpl/captcha.tpl.php:36
+msgid "Drag the large slider handle to fill the gap, then release to verify automatically. Keyboard users can adjust with arrow keys and press Enter to verify. The server accepts an alignment within four image pixels and also checks PoW. PHP GD with PNG support is required. Image matching can be automated; choose Local PoW if GD or visual interaction is unavailable."
+msgstr ""
+
+#: tpl/captcha.tpl.php:39
+msgid "Cloudflare evaluates the browser and returns a token that this server verifies with Cloudflare. This method needs both keys and makes third-party network requests. Trying the preview consumes a test response without logging you in."
+msgstr ""
+
+#: tpl/captcha.tpl.php:40
+msgid "Site Key"
+msgstr ""
+
+#: tpl/captcha.tpl.php:41
+msgid "Secret Key"
+msgstr ""
+
+#: tpl/captcha.tpl.php:43
+msgid "Get Turnstile keys"
+msgstr ""
+
+#: tpl/captcha.tpl.php:46
+msgid "Interactive verification preview"
+msgstr ""
+
+#: tpl/captcha.tpl.php:47
+msgid "Try it here"
+msgstr ""
+
+#: tpl/captcha.tpl.php:48
+msgid "See the challenge and its actual server result before saving."
+msgstr ""
+
+#: tpl/captcha.tpl.php:54
+msgid "Registration"
+msgstr ""
+
+#: tpl/captcha.tpl.php:57
+msgid "Lost password"
+msgstr ""
+
+#: tpl/captcha.tpl.php:59
+msgid "Login is protected whenever a method is enabled. Applies to WordPress forms and WooCommerce login. Forced KeyLockr SSO keeps its own login flow. Changes take effect after saving."
 msgstr ""
 
 #: tpl/easylogin_cfm.tpl.php:28
@@ -1351,151 +1627,95 @@ msgstr ""
 msgid "Hide the password form and allow only KeyLockr QR login. DoLogin enables this only after the current administrator has a verified binding for the saved <code>App Tag</code> and site keys. Once enabled, failures never restore other login methods; rename the plugin folder through FTP or the hosting file manager if external recovery is required."
 msgstr ""
 
-#: tpl/setting.tpl.php:246
-msgid "Cloudflare Turnstile Settings"
-msgstr ""
-
-#: tpl/setting.tpl.php:251
-msgid "Cloudflare Turnstile"
-msgstr ""
-
-#. translators: %s: page name where Cloudflare Turnstile is shown.
-#: tpl/setting.tpl.php:258
-#: tpl/setting.tpl.php:274
-#: tpl/setting.tpl.php:291
-msgid "This will enable Cloudflare Turnstile on %s page."
-msgstr ""
-
-#: tpl/setting.tpl.php:259
-msgid "Login"
-msgstr ""
-
-#: tpl/setting.tpl.php:267
-msgid "Cloudflare Turnstile on Register Page"
-msgstr ""
-
-#: tpl/setting.tpl.php:275
-msgid "Register"
-msgstr ""
-
-#: tpl/setting.tpl.php:284
-msgid "Cloudflare Turnstile on Lost Password Page"
-msgstr ""
-
-#: tpl/setting.tpl.php:292
-msgid "Lost Password"
-msgstr ""
-
-#: tpl/setting.tpl.php:300
-msgid "Cloudflare Turnstile Keys"
-msgstr ""
-
-#: tpl/setting.tpl.php:305
-msgid "Site Key"
-msgstr ""
-
-#: tpl/setting.tpl.php:309
-msgid "Secret Key"
-msgstr ""
-
-#. translators: 1: opening link tag, 2: closing link tag.
-#: tpl/setting.tpl.php:327
-msgid "Generate keys from %1$sCloudflare Turnstile%2$s."
-msgstr ""
-
-#: tpl/setting.tpl.php:334
-msgid "Cloudflare Turnstile is better than Google reCAPTCHA."
-msgstr ""
-
-#: tpl/setting.tpl.php:341
+#: tpl/setting.tpl.php:248
 msgid "General Settings"
 msgstr ""
 
-#: tpl/setting.tpl.php:346
-#: tpl/setting.tpl.php:405
+#: tpl/setting.tpl.php:253
+#: tpl/setting.tpl.php:312
 msgid "Whitelist"
 msgstr ""
 
-#: tpl/setting.tpl.php:353
+#: tpl/setting.tpl.php:260
 msgid "Format"
 msgstr ""
 
-#: tpl/setting.tpl.php:354
+#: tpl/setting.tpl.php:261
 msgid "Both prefix and value are case insensitive."
 msgstr ""
 
-#: tpl/setting.tpl.php:355
+#: tpl/setting.tpl.php:262
 msgid "Spaces around comma/colon are allowed."
 msgstr ""
 
-#: tpl/setting.tpl.php:356
+#: tpl/setting.tpl.php:263
 msgid "One rule set per line."
 msgstr ""
 
-#: tpl/setting.tpl.php:359
+#: tpl/setting.tpl.php:266
 msgid "Prefix list"
 msgstr ""
 
-#: tpl/setting.tpl.php:361
+#: tpl/setting.tpl.php:268
 msgid "IP prefix with colon is optional. IP value support wildcard (*)."
 msgstr ""
 
 #. translators: %s: the # comment character.
-#: tpl/setting.tpl.php:367
+#: tpl/setting.tpl.php:274
 msgid "Use %s to append comments in the end of each line."
 msgstr ""
 
 #. translators: %s: the !: exclusion operator.
-#: tpl/setting.tpl.php:376
+#: tpl/setting.tpl.php:283
 msgid "Use %s to exclude one value."
 msgstr ""
 
 #. translators: %s: the doapi.us domain.
-#: tpl/setting.tpl.php:384
+#: tpl/setting.tpl.php:291
 msgid "This will send a request to %s to get your public Geolocation info."
 msgstr ""
 
 #. translators: %s: the doapi.us domain.
-#: tpl/setting.tpl.php:384
+#: tpl/setting.tpl.php:291
 msgid "Check My Geolocation Data"
 msgstr ""
 
-#: tpl/setting.tpl.php:393
+#: tpl/setting.tpl.php:300
 msgid "Blacklist"
 msgstr ""
 
 #. translators: %s: the Whitelist section name.
-#: tpl/setting.tpl.php:404
+#: tpl/setting.tpl.php:311
 msgid "Same format as %s"
 msgstr ""
 
-#: tpl/setting.tpl.php:410
-#: tpl/setting.tpl.php:411
-#: tpl/setting.tpl.php:412
-#: tpl/setting.tpl.php:413
-#: tpl/setting.tpl.php:414
-#: tpl/setting.tpl.php:415
+#: tpl/setting.tpl.php:317
+#: tpl/setting.tpl.php:318
+#: tpl/setting.tpl.php:319
+#: tpl/setting.tpl.php:320
+#: tpl/setting.tpl.php:321
+#: tpl/setting.tpl.php:322
 msgid "Example"
 msgstr ""
 
-#: tpl/setting.tpl.php:411
+#: tpl/setting.tpl.php:318
 msgid "Dropped optional prefix"
 msgstr ""
 
-#: tpl/setting.tpl.php:415
+#: tpl/setting.tpl.php:322
 msgid "Match all visitors from US except the IP 1.2.3.4"
 msgstr ""
 
-#: tpl/setting.tpl.php:421
+#: tpl/setting.tpl.php:328
 msgid "GDPR Compliance"
 msgstr ""
 
-#: tpl/setting.tpl.php:425
+#: tpl/setting.tpl.php:332
 msgid "With this feature turned on, all logged IPs get obfuscated (md5-hashed)."
 msgstr ""
 
-#: tpl/setting.tpl.php:436
-#: tpl/setting.tpl.php:437
+#: tpl/setting.tpl.php:343
+#: tpl/setting.tpl.php:344
 msgid "Save Changes"
 msgstr ""
 

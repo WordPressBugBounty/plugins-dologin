@@ -12,12 +12,45 @@ defined( 'WPINC' ) || exit;
 
 class Captcha extends Instance {
 
+	/** Saving local verification must not strand users on an insecure login origin. */
+	public static function local_supported() {
+		foreach ( array( site_url(), home_url(), wp_login_url() ) as $url ) {
+			$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+			$loopback = 'localhost' === $host || '[::1]' === $host || ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) && 0 === strpos( $host, '127.' ) );
+			// Frontend login forms need a secure origin too; a loopback site must
+			// not exempt an unrelated custom login or home URL from this check.
+			if ( ! $loopback && ( ! is_ssl() || 'https' !== wp_parse_url( $url, PHP_URL_SCHEME ) ) ) { return false; }
+		}
+		return true;
+	}
+	/** Preserve the existing enabled flag and keys across provider selection. */
+	public static function method() {
+		if ( ! Conf::val( 'cf' ) ) {
+			return 'off';
+		}
+		return Conf::val( 'captcha_method' ) ? Conf::val( 'captcha_method' ) : 'turnstile';
+	}
+
+	public static function enabled( $context = 'login' ) {
+		if ( 'off' === self::method() ) {
+			return false;
+		}
+		if ( 'login' === $context ) {
+			return ! KLSso::force_enabled();
+		}
+		return ( 'register' === $context && Conf::val( 'recapt_register' ) ) || ( 'reset' === $context && Conf::val( 'recapt_forget' ) );
+	}
+
 	/**
-	 * Display Cloudflare Turnstile
+	 * Display the selected verification provider.
 	 *
 	 * @since  1.6
 	 */
-	public function show() {
+	public function show( $context = 'login' ) {
+		if ( 'turnstile' !== self::method() ) {
+			Captcha_UI::widget( self::method(), $context );
+			return;
+		}
 		// Cloudflare Turnstile must load its api.js from Cloudflare's domain; it cannot be self-hosted.
 		// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent
 		wp_register_script( 'dologin_cf_api', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), Core::VER, true );
@@ -27,11 +60,15 @@ class Captcha extends Instance {
 	}
 
 	/**
-	 * Validate Cloudflare Turnstile
+	 * Validate the selected provider before the protected form action.
 	 *
 	 * @since  1.6
 	 */
-	public function authenticate() {
+	public function authenticate( $context = 'login', $username = '', $password = '' ) {
+		if ( in_array( self::method(), array( 'pow', 'sequence', 'puzzle' ), true ) ) {
+			$this->cls( 'Captcha_Local' )->authenticate( $context, $username, $password );
+			return;
+		}
 		// This runs on the public login form / REST 2-step and is authenticated by the Turnstile token itself, not a WP nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( empty( $_POST['cf-turnstile-response'] ) || ! is_string( $_POST['cf-turnstile-response'] ) ) {
@@ -46,6 +83,15 @@ class Captcha extends Instance {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$cf_response = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) );
+		$this->verify_turnstile( $cf_response );
+		$this->_store_token();
+	}
+
+	/** Shared server check; previews never create a login continuation. */
+	public function verify_turnstile( $cf_response ) {
+		if ( ! is_string( $cf_response ) || '' === $cf_response || strlen( $cf_response ) > 2048 ) {
+			throw new \Exception( 'captcha_missing' );
+		}
 
 		// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Cloudflare Turnstile verification endpoint; required by the captcha feature and cannot be self-hosted.
 		$url  = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -86,10 +132,21 @@ class Captcha extends Instance {
 			throw new \Exception( $err_code );
 		}
 
-		// Mark this session as trusted, to prevent duplicate check when submitting 2FA.
-		$this->_store_token();
-
 		defined( 'debug' ) && debug( '✅ passed' );
+	}
+
+	/** The REST route also enforces capability and WordPress REST nonce checks. */
+	public function demo_turnstile( $request ) {
+		nocache_headers();
+		if ( ! current_user_can( apply_filters( 'dologin_admin_menu_access', 'manage_options' ) ) ) {
+			return REST::err( __( 'You cannot preview verification settings.', 'dologin' ) );
+		}
+		try {
+			$this->verify_turnstile( $request->get_param( 'response' ) );
+			return REST::ok( array( 'message' => __( 'Passed: Cloudflare confirmed this response on the server.', 'dologin' ) ) );
+		} catch ( \Exception $ex ) {
+			return REST::err( Lang::text( $ex->getMessage() ) );
+		}
 	}
 
 	/**

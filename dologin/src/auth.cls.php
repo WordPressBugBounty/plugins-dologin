@@ -62,15 +62,15 @@ class Auth extends Instance {
 	}
 
 	/**
-	 * Check Cloudflare Turnstile for registration
+	 * Check the selected verification provider for registration.
 	 *
 	 * @since 1.9
 	 * @access public
 	 */
 	public function registration_errors( $errors ) {
-		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
+		if ( Captcha::enabled( 'register' ) ) {
 			try {
-				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+				$this->cls( 'Captcha' )->authenticate( 'register' ); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
 				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );
@@ -83,15 +83,15 @@ class Auth extends Instance {
 	}
 
 	/**
-	 * Check Cloudflare Turnstile for lost-password requests
+	 * Check the selected verification provider for lost-password requests.
 	 *
 	 * @since 1.9
 	 * @access public
 	 */
 	public function lostpassword_errors( $errors ) {
-		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_forget' ) ) {
+		if ( Captcha::enabled( 'reset' ) ) {
 			try {
-				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+				$this->cls( 'Captcha' )->authenticate( 'reset' ); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
 				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );
@@ -313,10 +313,10 @@ class Auth extends Instance {
 			}
 		}
 
-		// Validate Turnstile. Skip XML-RPC: machine clients cannot solve a challenge, and XML-RPC is already covered by the IP limiter + white/blacklist via check_xmlrpc().
-		if ( ! defined( 'DOLOGIN_ERR' ) && Conf::val( 'cf' ) && ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+		// Validate the selected provider. XML-RPC uses the IP limiter and lists via check_xmlrpc().
+		if ( ! defined( 'DOLOGIN_ERR' ) && Captcha::enabled() && ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
 			try {
-				$this->cls( 'Captcha' )->authenticate(); // Need to be before WP auth check
+				$this->cls( 'Captcha' )->authenticate( 'login', $username, $password ); // Need to be before WP auth check
 			} catch ( \Exception $ex ) {
 				$err_code = $ex->getMessage();
 				defined( 'debug' ) && debug( '❌ Turnstile error: ' . $err_code );

@@ -348,11 +348,12 @@ class TwoFA extends Instance {
 			return REST::err( Lang::msg( 'empty_u_p' ) );
 		}
 
-		// Password contents must not be sanitized, but WordPress-added slashes must be removed.
+		// Match wp_signon/WooCommerce's POST credentials exactly. Unslashing only
+		// preflight changes both authentication and the captcha continuation HMAC.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$username = wp_unslash( $_POST[ $field_u ] );
+		$username = $_POST[ $field_u ];
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$password = wp_unslash( $_POST[ $field_p ] );
+		$password = $_POST[ $field_p ];
 
 		// Verify u & p first.
 		$this->_dry_run = true;

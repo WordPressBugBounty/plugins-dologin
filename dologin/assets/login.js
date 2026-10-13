@@ -4,6 +4,11 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 
 	function dologin_cb( e )
 	{
+		var verification = this.querySelector( '.dologin-captcha' );
+		if ( verification && ! $( verification ).find( '[name="dologin-captcha-ticket"]' ).val() ) {
+			e.preventDefault();
+			return false;
+		}
 		var dologin_user_handler = '#user_login';
 		if ( $( this ).find( '#username' ).length ) {
 			dologin_user_handler = '#username';
@@ -37,6 +42,9 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 			dataType: 'json',
 			success: function( res ) {
 				if ( res._res !== 'ok' ) {
+					if ( verification && verification.dologinVerification ) {
+						verification.dologinVerification.start();
+					}
 					$( '#dologin-process-msg' ).attr( 'class', 'dologin-danger' ).html( res._msg );
 					$( '#dologin-two_factor_code' ).attr( 'required', false );
 					$( '#dologin-dynamic_code' ).hide();
@@ -53,6 +61,12 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 					dologin_can_submit_user = $( dologin_user_handler ).val();
 				}
 
+			},
+			error: function() {
+				if ( verification && verification.dologinVerification ) {
+					verification.dologinVerification.start();
+				}
+				$( '#dologin-process-msg' ).attr( 'class', 'dologin-danger' ).text( dologin.network_error );
 			}
 		} );
 	}

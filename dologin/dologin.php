@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       DoLogin Security
  * Description:       Login security: KeyLockr SSO scan login, 2FA, passwordless login, Cloudflare Turnstile, GeoLocation/IP limits, whitelist and blacklist. WooCommerce and WP-CLI supported.
- * Version:           5.0.10
+ * Version:           5.1.3
  * Requires at least:  4.4
  * Requires PHP:      5.6
  * Author:            WPDO
@@ -34,7 +34,7 @@ if (defined('DOLOGIN_V')) {
 	return;
 }
 
-define('DOLOGIN_V', '5.0.10');
+define('DOLOGIN_V', '5.1.3');
 
 !defined('DOLOGIN_DIR') && define('DOLOGIN_DIR', __DIR__ . '/'); // Full absolute path '/usr/local/***/wp-content/plugins/dologin/' or MU
 !defined('DOLOGIN_PLUGIN_URL') && define('DOLOGIN_PLUGIN_URL', plugin_dir_url(__FILE__)); // Full URL path '//example.com/wp-content/plugins/dologin/'

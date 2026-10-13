@@ -153,6 +153,26 @@ class Admin extends Instance {
 			$list['blacklist'] = $this->_sanitize_list( $raw_data['blacklist'] );
 
 			$save_errors = array();
+			// Invalid providers or incomplete keys cannot silently remove saved protection.
+			$method = isset( $raw_data['captcha_method'] ) ? $raw_data['captcha_method'] : '';
+			if ( ! is_string( $method ) || ! in_array( $method, array( 'off', 'pow', 'sequence', 'puzzle', 'turnstile' ), true ) ) {
+				$list['captcha_method'] = Conf::val( 'captcha_method' );
+				$list['cf'] = Conf::val( 'cf' );
+				$save_errors[] = __( 'Select a valid verification method. The previous method was retained.', 'dologin' );
+			} elseif ( in_array( $method, array( 'pow', 'sequence', 'puzzle' ), true ) && ! Captcha::local_supported() ) {
+				// Preserve the complete previous captcha configuration on an unsafe origin.
+				foreach ( array( 'captcha_method', 'cf', 'cf_pub_key', 'cf_priv_key', 'recapt_register', 'recapt_forget' ) as $key ) { $list[ $key ] = Conf::val( $key ); }
+				$save_errors[] = __( 'Local verification requires HTTPS for both settings and login, except on localhost. The previous verification settings were retained.', 'dologin' );
+			} elseif ( 'turnstile' === $method && ( empty( $list['cf_pub_key'] ) || empty( $list['cf_priv_key'] ) ) ) {
+				$list['captcha_method'] = Conf::val( 'captcha_method' );
+				$list['cf'] = Conf::val( 'cf' );
+				$list['cf_pub_key'] = Conf::val( 'cf_pub_key' );
+				$list['cf_priv_key'] = Conf::val( 'cf_priv_key' );
+				$save_errors[] = __( 'Turnstile needs both keys. The previous verification settings were retained.', 'dologin' );
+			} else {
+				$list['captcha_method'] = 'off' === $method ? 'turnstile' : $method;
+				$list['cf'] = 'off' !== $method;
+			}
 			if ( ! empty( $list['kl_sso'] ) ) {
 				$requirements = KLSso::requirements();
 				if ( empty( $list['kl_sso_svc_id'] ) ) {
